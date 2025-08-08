@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/background"
+    tools:context=".MainActivity">
+
+    <!-- Logo -->
+    <ImageView
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/elevenlabs_logo"
+        android:contentDescription="ElevenLabs Logo"
+        android:adjustViewBounds="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- App Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Android Example App"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/on_background"
+        android:layout_marginBottom="24dp"
+        android:textAlignment="center" />
+
+    <!-- Status Display -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: Disconnected"
+        android:textSize="15sp"
+        android:textColor="@color/on_surface"
+        android:background="@color/elevated_surface"
+        android:padding="16dp"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginBottom="20dp"
+        android:textAlignment="center"
+        android:foregroundGravity="center"
+        android:elevation="0dp"
+        android:backgroundTintMode="src_over"
+        android:outlineAmbientShadowColor="@color/outline" />
+
+    <!-- Connect Button -->
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Connect"
+        android:textAllCaps="false"
+        android:textSize="15sp"
+        android:backgroundTint="@color/primary_button_tint"
+        android:textColor="@color/primary_button_text"
+        android:layout_marginBottom="10dp"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp" />
+
+    <!-- Disconnect Button -->
+    <!-- Single action button; label toggles between Connect/Disconnect -->
+
+</LinearLayout>

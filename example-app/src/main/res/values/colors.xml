@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Theme Colors (ElevenLabs brand: white background, black UI, orange accent) -->
+    <color name="primary">#000000</color>
+    <color name="primary_variant">#111111</color>
+    <color name="secondary">#FF6A00</color>
+    <color name="secondary_variant">#E85A00</color>
+    <color name="background">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#D32F2F</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="on_background">#111111</color>
+    <color name="on_surface">#111111</color>
+    <color name="on_error">#FFFFFF</color>
+
+    <!-- Message Colors -->
+    <color name="user_message_background">#6200EA</color>
+    <color name="user_message_text">#FFFFFF</color>
+    <color name="agent_message_background">#F5F5F5</color>
+    <color name="agent_message_text">#212121</color>
+    <color name="agent_avatar_background">#E3F2FD</color>
+    <color name="message_time_text">#757575</color>
+
+    <!-- Status Colors (on dark) -->
+    <color name="status_connected">#22C55E</color>
+    <color name="status_connecting">#F59E0B</color>
+    <color name="status_disconnected">#9CA3AF</color>
+    <color name="status_error">#EF4444</color>
+
+    <!-- UI Colors -->
+    <color name="input_background">#F7F7F8</color>
+    <color name="button_background">@color/primary</color>
+    <color name="button_text">#FFFFFF</color>
+    <color name="divider">#E5E7EB</color>
+
+    <!-- Additional brand accents -->
+    <color name="elevated_surface">#FFFFFF</color>
+    <color name="outline">#E5E7EB</color>
+
+    <!-- Button stateful colors -->
+    <color name="primary_button_tint">#000000</color>
+    <color name="primary_button_text">#FFFFFF</color>
+</resources>
