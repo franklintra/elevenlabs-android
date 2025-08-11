@@ -28,7 +28,9 @@ data class ConversationConfig(
     val overrides: Overrides? = null,
     val customLlmExtraBody: Map<String, Any>? = null,
     val dynamicVariables: Map<String, Any>? = null,
-    val onConnect: ((conversationId: String) -> Unit)? = null
+    val onConnect: ((conversationId: String) -> Unit)? = null,
+    val onMessage: ((source: String, message: String) -> Unit)? = null,
+    val onModeChange: ((mode: String) -> Unit)? = null
 
 ) {
     init {

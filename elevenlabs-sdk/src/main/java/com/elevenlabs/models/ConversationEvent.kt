@@ -111,4 +111,14 @@ sealed class ConversationEvent {
         val code: String? = null,
         val timestamp: Long = System.currentTimeMillis()
     ) : ConversationEvent()
+
+    /**
+     * Event representing a ping from the agent
+     * Matches payload: {"ping_event":{"event_id":3,"ping_ms":null},"type":"ping"}
+     */
+    data class Ping(
+        val eventId: Int,
+        val pingMs: Long?
+    ) : ConversationEvent()
+
 }

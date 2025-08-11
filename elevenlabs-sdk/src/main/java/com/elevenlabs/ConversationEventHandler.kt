@@ -46,6 +46,7 @@ class ConversationEventHandler(
                 is ConversationEvent.ModeChange -> handleModeChange(event)
                 is ConversationEvent.VadScore -> handleVadScore(event)
                 is ConversationEvent.ConnectionStateChange -> handleConnectionStateChange(event)
+                is ConversationEvent.Ping -> handlePing(event)
                 is ConversationEvent.Error -> handleError(event)
             }
         } catch (e: Exception) {
@@ -153,13 +154,29 @@ class ConversationEventHandler(
     }
 
     /**
+     * Handle ping events
+     */
+    private fun handlePing(event: ConversationEvent.Ping) {
+        Log.d("ConversationEventHandler", "Ping received: eventId=${event.eventId}, pingMs=${event.pingMs}")
+        // Reply with pong using same event id
+        scope.launch {
+            try {
+                val pong = OutgoingEvent.Pong(eventId = event.eventId.toString())
+                messageCallback(pong)
+            } catch (e: Exception) {
+                Log.d("ConversationEventHandler", "Failed to send pong: ${e.message}")
+            }
+        }
+    }
+
+    /**
      * Handle VAD (Voice Activity Detection) score events
      */
     private fun handleVadScore(event: ConversationEvent.VadScore) {
         // VAD scores can be used for UI indicators or audio processing decisions
         // For now, we'll just log them
         if (event.score > 0.7f) {
-        Log.d("ConversationEventHandler", "High voice activity detected: ${event.score}")
+            Log.d("ConversationEventHandler", "High voice activity detected: ${event.score}")
         }
     }
 

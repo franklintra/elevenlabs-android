@@ -9,7 +9,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.elevenlabs.ConversationClient
 import com.elevenlabs.ConversationSession
-import com.elevenlabs.example.models.AppConfiguration
 import com.elevenlabs.example.models.UiState
 import com.elevenlabs.models.ConversationStatus
 import kotlinx.coroutines.launch
@@ -41,7 +40,11 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
 
     private var hasAudioPermission: Boolean = false
 
-    fun startConversation(appConfig: AppConfiguration, activityContext: Context) {
+    // Mode ("speaking" | "listening") propagated from SDK callback
+    private val _mode = MutableLiveData<String>()
+    val mode: LiveData<String> = _mode
+
+    fun startConversation(activityContext: Context) {
         if (currentSession != null && _uiState.value != UiState.Idle && _uiState.value !is UiState.Error) {
             Log.d("ConversationViewModel", "Session already active or connecting.")
             return
@@ -52,10 +55,26 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
 
         viewModelScope.launch {
             try {
-                val session = ConversationClient.startSession(
-                    appConfig.toConversationConfig(),
-                    activityContext
+                val config = com.elevenlabs.ConversationConfig(
+                    agentId = "J3Pbu5gP6NNKBscdCdwA",
+                    conversationToken = null,
+                    userId = "demo-user",
+                    textOnly = false,
+                    overrides = null,
+                    customLlmExtraBody = null,
+                    dynamicVariables = null,
+                    onConnect = { conversationId ->
+                        Log.d("ConversationViewModel", "Connected id=$conversationId")
+                    },
+                    onMessage = { source, message ->
+                        Log.d("ConversationViewModel", "onMessage [$source]: $message")
+                    },
+                    onModeChange = { mode ->
+                        _mode.postValue(mode)
+                    }
                 )
+
+                val session = ConversationClient.startSession(config, activityContext)
 
                 currentSession = session
 

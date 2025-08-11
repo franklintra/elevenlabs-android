@@ -128,7 +128,6 @@ class WebRTCConnection(
         }
 
         val payload = messageString.toByteArray()
-        Log.d("WebRTCConnection", "publishData size=${payload.size}")
         scope.launch {
             try {
                 val result = room.localParticipant.publishData(payload)
@@ -136,7 +135,7 @@ class WebRTCConnection(
                     Log.d("WebRTCConnection", "publishData failed - ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
-                Log.d("WebRTCConnection", "publishData error - ${e.message}")
+                Log.e("WebRTCConnection", "publishData error - ${e.message}")
             }
         }
     }
@@ -208,8 +207,6 @@ class WebRTCConnection(
                     }
 
                     is RoomEvent.DataReceived -> {
-                        val fromSid = event.participant?.sid
-                        Log.d("WebRTCConnection", "Data received from $fromSid")
                         event.data?.let { handleDataReceived(it, event.participant) }
                     }
 
@@ -271,6 +268,21 @@ class WebRTCConnection(
             val message = String(data)
             // Send message to processing queue
             messageChannel.trySend(message)
+            // Invoke user onMessage callback with source classification
+            try {
+                val source = when (participant) {
+                    is RemoteParticipant -> "ai"
+                    is LocalParticipant -> "user"
+                    else -> "ai"
+                }
+                latestConfig?.onMessage?.invoke(source, message)
+
+                // Toggle mode based on source
+                val mode = if (participant?.isSpeaking == true) "speaking" else "listening"
+                latestConfig?.onModeChange?.invoke(mode)
+            } catch (t: Throwable) {
+                Log.d("WebRTCConnection", "onMessage callback threw: ${t.message}")
+            }
         } catch (e: Exception) {
             Log.d("WebRTCConnection", "Failed to process received data: ${e.message}")
         }

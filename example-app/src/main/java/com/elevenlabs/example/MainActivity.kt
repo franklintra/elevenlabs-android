@@ -27,6 +27,11 @@ class MainActivity : AppCompatActivity() {
 
     // UI Components
     private lateinit var statusText: TextView
+    private lateinit var modeLabel: TextView
+    private lateinit var modeDot: android.view.View
+    private lateinit var modeContainer: android.widget.LinearLayout
+
+    // No broadcast receiver; we use ViewModel.mode
     private lateinit var connectButton: Button
 
     // Permission request launcher for RECORD_AUDIO only
@@ -39,8 +44,7 @@ class MainActivity : AppCompatActivity() {
             Log.d("MainActivity", "Permission granted and marked as working")
 
             // Permission granted, start conversation
-            val demoConfig = com.elevenlabs.example.models.AppConfiguration.demo()
-            viewModel.startConversation(demoConfig, this@MainActivity)
+            viewModel.startConversation(this@MainActivity)
         } else {
             showError("Microphone permission is required for voice conversations")
         }
@@ -56,13 +60,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         statusText = findViewById(R.id.statusText)
+        modeLabel = findViewById(R.id.modeLabel)
+        modeDot = findViewById(R.id.modeDot)
+        modeContainer = findViewById(R.id.modeContainer)
         connectButton = findViewById(R.id.connectButton)
 
+        connectButton.isEnabled = true
         connectButton.setOnClickListener {
-            val state = viewModel.uiState.value
-            if (state == UiState.Connected) {
+            Log.d("MainActivity", "Connect button clicked")
+            val status = viewModel.sessionStatus.value
+            if (status == com.elevenlabs.models.ConversationStatus.CONNECTED) {
                 endConversation()
-            } else if (state == UiState.Idle || state == UiState.Error) {
+            } else {
                 startConversation()
             }
         }
@@ -79,6 +88,11 @@ class MainActivity : AppCompatActivity() {
             updateStatusDisplay(status)
         }
 
+        // Mode changes: update indicator
+        viewModel.mode.observe(this) { mode ->
+            updateModeUI(mode ?: "listening")
+        }
+
         viewModel.errorMessage.observe(this) { error ->
             error?.let {
                 // If we get a permission-related error, reset the working flag
@@ -91,8 +105,6 @@ class MainActivity : AppCompatActivity() {
                 viewModel.clearError()
             }
         }
-
-
     }
 
     private fun updateUIForState(state: UiState) {
@@ -139,6 +151,17 @@ class MainActivity : AppCompatActivity() {
 
         statusText.text = statusMessage
         statusText.setTextColor(statusColor)
+
+        // Show/hide mode container with connection
+        modeContainer.visibility = if (status == ConversationStatus.CONNECTED) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
+    private fun updateModeUI(mode: String) {
+        modeLabel.text = if (mode == "speaking") "Speaking" else "Listening"
+        val color = if (mode == "speaking") R.color.status_connected else R.color.status_disconnected
+        modeDot.background = android.graphics.drawable.ShapeDrawable(android.graphics.drawable.shapes.OvalShape()).apply {
+            paint.color = ContextCompat.getColor(this@MainActivity, color)
+        }
     }
 
     private fun startConversation() {
@@ -149,8 +172,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Use demo configuration for simplicity
-        val demoConfig = com.elevenlabs.example.models.AppConfiguration.demo()
-        viewModel.startConversation(demoConfig, this@MainActivity)
+        viewModel.startConversation(this@MainActivity)
     }
 
     private fun endConversation() {
@@ -187,6 +209,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // No broadcast receiver to unregister
         viewModel.endConversation()
     }
 }

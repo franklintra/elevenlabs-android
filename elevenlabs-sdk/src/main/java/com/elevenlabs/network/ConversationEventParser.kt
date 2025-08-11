@@ -40,6 +40,7 @@ object ConversationEventParser {
                 "vad_score" -> parseVadScore(jsonObject)
                 "connection_state_change" -> parseConnectionStateChange(jsonObject)
                 "error" -> parseError(jsonObject)
+                "ping" -> parsePing(jsonObject)
                 else -> {
                     handleParsingError(json, IllegalArgumentException("Unknown event type: $eventType"))
                     null
@@ -49,6 +50,17 @@ object ConversationEventParser {
             handleParsingError(json, e)
             null
         }
+    }
+
+    /**
+     * Parse ping event
+     * Matches payload: {"ping_event":{"event_id":3,"ping_ms":null},"type":"ping"}
+     */
+    private fun parsePing(jsonObject: JsonObject): ConversationEvent.Ping {
+        val ping = jsonObject.getAsJsonObject("ping_event")
+        val eventId = ping?.get("event_id")?.asInt ?: 0
+        val pingMs = ping?.get("ping_ms")?.let { if (it.isJsonNull) null else it.asLong }
+        return ConversationEvent.Ping(eventId = eventId, pingMs = pingMs)
     }
 
     /**
@@ -257,6 +269,16 @@ sealed class OutgoingEvent {
         override val eventId: String = generateEventId()
     ) : OutgoingEvent() {
         override val type = "tool_result"
+    }
+
+    /**
+     * Pong reply for ping
+     */
+    data class Pong(
+        @SerializedName("event_id")
+        override val eventId: String
+    ) : OutgoingEvent() {
+        override val type: String = "pong"
     }
 
     companion object {
