@@ -53,12 +53,15 @@ internal object ConversationClientImpl {
         val audioManager = LiveKitAudioManager(context, room)
         Log.d("ConversationClient", "LiveKitAudioManager initialized")
 
-        // Create client tools registry with common tools
-        val toolRegistry = ClientToolRegistryBuilder()
-            .addTool("get_current_time", CommonClientTools.getCurrentTime)
-            .addTool("get_device_info", CommonClientTools.getDeviceInfo)
-            .addTool("log_message", CommonClientTools.logMessage)
-            .build()
+        // Create client tools registry from configuration
+        val toolRegistry = ClientToolRegistry()
+        finalConfig.clientTools.forEach { (name, tool) ->
+            try {
+                toolRegistry.registerTool(name, tool)
+            } catch (e: Exception) {
+                Log.d("ConversationClient", "Failed to register client tool '$name': ${e.message}")
+            }
+        }
 
         // Configure audio session for conversation
         if (!finalConfig.textOnly) {

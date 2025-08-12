@@ -63,15 +63,37 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                     overrides = null,
                     customLlmExtraBody = null,
                     dynamicVariables = null,
+                    clientTools = mapOf(
+                        "logMessage" to object : com.elevenlabs.ClientTool {
+                            override suspend fun execute(parameters: Map<String, Any>): com.elevenlabs.ClientToolResult {
+                                val message = parameters["message"] as? String
+                                    ?: return com.elevenlabs.ClientToolResult.failure("Missing 'message' parameter")
+                                val level = parameters["level"] as? String ?: "INFO"
+
+                                Log.d("ExampleApp", "[$level] Client Tool Log: $message")
+                                return com.elevenlabs.ClientToolResult.success("Message logged successfully")
+                            }
+                        }
+                    ),
                     onConnect = { conversationId ->
                         Log.d("ConversationViewModel", "Connected id=$conversationId")
                     },
-                    onMessage = { source, message ->
-                        Log.d("ConversationViewModel", "onMessage [$source]: $message")
-                    },
+                    // onMessage = { source, message ->
+                    //      Log.d("ConversationViewModel", "onMessage [$source]: $message")
+                    //  },
                     onModeChange = { mode ->
                         _mode.postValue(mode)
+                    },
+                    onStatusChange = { status ->
+                        Log.d("ConversationViewModel", "onStatusChange: $status")
+                    },
+                    onCanSendFeedbackChange = { canSendFeedback ->
+                        Log.d("ConversationViewModel", "onCanSendFeedbackChange: $canSendFeedback")
+                    },
+                    onUnhandledClientToolCall = { toolCall ->
+                        Log.d("ConversationViewModel", "onUnhandledClientToolCall: $toolCall")
                     }
+
                 )
 
                 val session = ConversationClient.startSession(config, activityContext)

@@ -73,8 +73,8 @@ class WebRTCConnection(
             // Start message processing
             startMessageProcessing()
 
+            // This is updated here rather than in the Connected event handler to ensure that the connection state is updated before the overrides are sent
             updateConnectionState(ConnectionState.CONNECTED)
-            Log.d("WebRTCConnection", "Connected. roomSid=${room.sid}, name=${room.name}")
 
             // Send initiation overrides payload after connect
             try {
@@ -162,7 +162,7 @@ class WebRTCConnection(
             room.events.collect { event ->
                 when (event) {
                     is RoomEvent.Connected -> {
-                        Log.d("WebRTCConnection", "LiveKit room connected (sid=${room.sid})")
+                        Log.d("WebRTCConnection", "Connected. roomSid=${room.sid}, name=${room.name}")
                         // invoke user callback if provided with extracted conversation id
                         try {
                             val roomName = room.name ?: ""
@@ -211,7 +211,7 @@ class WebRTCConnection(
                     }
 
                     else -> {
-                        // Handle other events as needed
+                        // Log.d("WebRTCConnection", "Unhandled event: ${event.javaClass.simpleName}")
                     }
                 }
             }
@@ -295,23 +295,17 @@ class WebRTCConnection(
         if (_connectionState.value != newState) {
             _connectionState.value = newState
             connectionStateListener?.invoke(newState)
+            // Invoke user status change callback if provided
+            val statusString = when (newState) {
+                ConnectionState.CONNECTED -> "connected"
+                ConnectionState.CONNECTING -> "connecting"
+                ConnectionState.DISCONNECTED, ConnectionState.ERROR, ConnectionState.RECONNECTING -> "disconnected"
+                else -> "disconnected"
+            }
+            try {
+                latestConfig?.onStatusChange?.invoke(statusString)
+            } catch (_: Throwable) { }
         }
-    }
-
-    /**
-     * Get local audio track for microphone input
-     * TODO: Implement proper audio track access when LiveKit API is clarified
-     */
-    fun getLocalAudioTrack(): LocalAudioTrack? {
-        return null // Placeholder implementation
-    }
-
-    /**
-     * Get remote audio tracks for agent speech
-     * TODO: Implement proper remote audio track access when LiveKit API is clarified
-     */
-    fun getRemoteAudioTracks(): List<RemoteAudioTrack> {
-        return emptyList() // Placeholder implementation
     }
 
     /**

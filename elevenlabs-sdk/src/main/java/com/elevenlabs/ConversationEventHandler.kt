@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 class ConversationEventHandler(
     private val audioManager: AudioManager,
     private val toolRegistry: ClientToolRegistry,
-    private val messageCallback: (OutgoingEvent) -> Unit
+    private val messageCallback: (OutgoingEvent) -> Unit,
+    private val onCanSendFeedbackChange: ((Boolean) -> Unit)? = null,
+    private val onUnhandledClientToolCall: ((ConversationEvent.ClientToolCall) -> Unit)? = null
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -73,6 +75,7 @@ class ConversationEventHandler(
 
         // Store the last agent event ID for feedback
         _lastAgentEventId.value = event.eventId
+        onCanSendFeedbackChange?.invoke(true)
 
         // If this is a voice conversation, ensure audio playback is active
         if (!audioManager.isPlaying()) {
@@ -110,6 +113,7 @@ class ConversationEventHandler(
     private fun handleInterruption(event: ConversationEvent.Interruption) {
         // User interrupted agent speech - switch to listening mode
         _conversationMode.value = ConversationMode.LISTENING
+        onCanSendFeedbackChange?.invoke(false)
 
         Log.d("ConversationEventHandler", "Conversation interrupted: ${event.eventId}")
     }
@@ -119,9 +123,18 @@ class ConversationEventHandler(
      */
     private suspend fun handleClientToolCall(event: ConversationEvent.ClientToolCall) {
         scope.launch {
+            val toolExists = toolRegistry.isToolRegistered(event.toolName)
+            if (!toolExists) {
+                // Notify app layer about unhandled tool call
+                try { onUnhandledClientToolCall?.invoke(event) } catch (_: Throwable) {}
+            }
+
             val result = try {
-                // Execute the requested tool
-                toolRegistry.executeTool(event.toolName, event.parameters)
+                if (!toolExists) {
+                    ClientToolResult.failure("Tool '${event.toolName}' not registered on client")
+                } else {
+                    toolRegistry.executeTool(event.toolName, event.parameters)
+                }
             } catch (e: Exception) {
                 ClientToolResult.failure("Tool execution failed: ${e.message}")
             }
@@ -140,8 +153,7 @@ class ConversationEventHandler(
 
                 messageCallback(toolResultEvent)
             }
-
-        Log.d("ConversationEventHandler", "Tool executed: ${event.toolName} -> ${if (result.success) "SUCCESS" else "FAILED"}")
+            Log.d("ConversationEventHandler", "Tool executed: ${event.toolName} -> ${if (result.success) "SUCCESS" else "FAILED"}")
         }
     }
 
@@ -202,6 +214,7 @@ class ConversationEventHandler(
                     }
                 }
                 _conversationMode.value = ConversationMode.LISTENING
+                onCanSendFeedbackChange?.invoke(false)
             }
             ConversationStatus.ERROR -> {
                 // Connection error - handle gracefully

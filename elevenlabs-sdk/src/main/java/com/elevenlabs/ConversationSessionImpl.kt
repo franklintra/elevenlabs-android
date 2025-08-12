@@ -40,6 +40,12 @@ internal class ConversationSessionImpl(
         messageCallback = { event ->
             // Send outgoing events through the connection
             connection.sendMessage(event)
+        },
+        onCanSendFeedbackChange = { canSend ->
+            try { config.onCanSendFeedbackChange?.invoke(canSend) } catch (_: Throwable) {}
+        },
+        onUnhandledClientToolCall = { call ->
+            try { config.onUnhandledClientToolCall?.invoke(call) } catch (_: Throwable) {}
         }
     )
 

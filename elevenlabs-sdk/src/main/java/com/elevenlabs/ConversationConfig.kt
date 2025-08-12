@@ -1,5 +1,7 @@
 package com.elevenlabs
 
+import com.elevenlabs.models.ConversationEvent.ClientToolCall
+
 /**
  * Configuration class for conversation sessions
  *
@@ -28,9 +30,13 @@ data class ConversationConfig(
     val overrides: Overrides? = null,
     val customLlmExtraBody: Map<String, Any>? = null,
     val dynamicVariables: Map<String, Any>? = null,
+    val clientTools: Map<String, ClientTool> = emptyMap(),
     val onConnect: ((conversationId: String) -> Unit)? = null,
     val onMessage: ((source: String, message: String) -> Unit)? = null,
-    val onModeChange: ((mode: String) -> Unit)? = null
+    val onModeChange: ((mode: String) -> Unit)? = null,
+    val onStatusChange: ((status: String) -> Unit)? = null,
+    val onCanSendFeedbackChange: ((canSend: Boolean) -> Unit)? = null,
+    val onUnhandledClientToolCall: ((ClientToolCall) -> Unit)? = null
 
 ) {
     init {
