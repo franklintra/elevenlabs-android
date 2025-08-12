@@ -76,6 +76,49 @@
         android:clickable="true"
         android:focusable="true" />
 
+    <!-- Feedback Buttons -->
+    <LinearLayout
+        android:id="@+id/feedbackContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        android:clickable="false"
+        android:focusable="false">
+
+        <Button
+            android:id="@+id/thumbsUpButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="👍"
+            android:textSize="18sp"
+            android:background="@drawable/feedback_button_positive"
+            android:textColor="@color/primary_button_text"
+            android:layout_marginEnd="12dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:enabled="false"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <Button
+            android:id="@+id/thumbsDownButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="👎"
+            android:textSize="18sp"
+            android:background="@drawable/feedback_button_negative"
+            android:textColor="@color/primary_button_text"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:enabled="false"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
     <!-- Mode indicator: dot + label below the button -->
     <LinearLayout
         android:id="@+id/modeContainer"

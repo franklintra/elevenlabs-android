@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var modeLabel: TextView
     private lateinit var modeDot: android.view.View
     private lateinit var modeContainer: android.widget.LinearLayout
+    private lateinit var feedbackContainer: android.widget.LinearLayout
+    private lateinit var thumbsUpButton: Button
+    private lateinit var thumbsDownButton: Button
 
     // No broadcast receiver; we use ViewModel.mode
     private lateinit var connectButton: Button
@@ -63,6 +66,9 @@ class MainActivity : AppCompatActivity() {
         modeLabel = findViewById(R.id.modeLabel)
         modeDot = findViewById(R.id.modeDot)
         modeContainer = findViewById(R.id.modeContainer)
+        feedbackContainer = findViewById(R.id.feedbackContainer)
+        thumbsUpButton = findViewById(R.id.thumbsUpButton)
+        thumbsDownButton = findViewById(R.id.thumbsDownButton)
         connectButton = findViewById(R.id.connectButton)
 
         connectButton.isEnabled = true
@@ -76,7 +82,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Single button toggles behavior based on state
+        // Feedback buttons
+        thumbsUpButton.setOnClickListener {
+            Log.d("MainActivity", "Thumbs up clicked")
+            // Disable both buttons immediately to prevent multiple clicks
+            thumbsUpButton.isEnabled = false
+            thumbsDownButton.isEnabled = false
+            viewModel.sendFeedback(true)
+        }
+
+        thumbsDownButton.setOnClickListener {
+            Log.d("MainActivity", "Thumbs down clicked")
+            // Disable both buttons immediately to prevent multiple clicks
+            thumbsUpButton.isEnabled = false
+            thumbsDownButton.isEnabled = false
+            viewModel.sendFeedback(false)
+        }
     }
 
     private fun setupObservers() {
@@ -104,6 +125,11 @@ class MainActivity : AppCompatActivity() {
                 showError(it)
                 viewModel.clearError()
             }
+        }
+
+        // Feedback state changes: enable/disable feedback buttons
+        viewModel.canSendFeedback.observe(this) { canSend ->
+            updateFeedbackUI(canSend)
         }
     }
 
@@ -154,6 +180,9 @@ class MainActivity : AppCompatActivity() {
 
         // Show/hide mode container with connection
         modeContainer.visibility = if (status == ConversationStatus.CONNECTED) android.view.View.VISIBLE else android.view.View.GONE
+
+        // Show/hide feedback container with connection
+        feedbackContainer.visibility = if (status == ConversationStatus.CONNECTED) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun updateModeUI(mode: String) {
@@ -162,6 +191,12 @@ class MainActivity : AppCompatActivity() {
         modeDot.background = android.graphics.drawable.ShapeDrawable(android.graphics.drawable.shapes.OvalShape()).apply {
             paint.color = ContextCompat.getColor(this@MainActivity, color)
         }
+    }
+
+    private fun updateFeedbackUI(canSend: Boolean) {
+        thumbsUpButton.isEnabled = canSend
+        thumbsDownButton.isEnabled = canSend
+        Log.d("MainActivity", "Feedback buttons enabled: $canSend")
     }
 
     private fun startConversation() {

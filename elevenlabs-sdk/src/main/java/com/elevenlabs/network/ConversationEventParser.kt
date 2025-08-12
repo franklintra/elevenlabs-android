@@ -86,6 +86,33 @@ object ConversationEventParser {
     }
 
     /**
+     * Parse event ID from JSON, converting string to int if needed
+     */
+    private fun parseEventId(obj: JsonObject): Int {
+        val eventIdElement = obj.get("event_id")
+        return when {
+            eventIdElement == null || eventIdElement.isJsonNull -> {
+                // Generate fallback ID
+                (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+            }
+            eventIdElement.isJsonPrimitive && eventIdElement.asJsonPrimitive.isNumber -> {
+                eventIdElement.asInt
+            }
+            eventIdElement.isJsonPrimitive && eventIdElement.asJsonPrimitive.isString -> {
+                val stringId = eventIdElement.asString
+                // Try to extract integer from string formats like "evt_123_456" or "123"
+                stringId.toIntOrNull()
+                    ?: stringId.split("_").lastOrNull()?.toIntOrNull()
+                    ?: stringId.split("_").firstOrNull()?.toIntOrNull()
+                    ?: (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+            }
+            else -> {
+                (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+            }
+        }
+    }
+
+    /**
      * Parse agent response event
      */
     private fun parseAgentResponse(jsonObject: JsonObject): ConversationEvent.AgentResponse {
@@ -101,8 +128,7 @@ object ConversationEventParser {
             else -> ""
         }
 
-        val eventId = obj.get("event_id")?.asString?.takeIf { it.isNotBlank() }
-            ?: "evt_${System.currentTimeMillis()}"
+        val eventId = parseEventId(obj)
 
         val timestamp = obj.get("timestamp")?.asLong ?: System.currentTimeMillis()
 
@@ -129,8 +155,7 @@ object ConversationEventParser {
             else -> ""
         }
 
-        val eventId = obj.get("event_id")?.asString?.takeIf { it.isNotBlank() }
-            ?: "evt_${System.currentTimeMillis()}"
+        val eventId = parseEventId(obj)
 
         val timestamp = obj.get("timestamp")?.asLong ?: System.currentTimeMillis()
 
@@ -153,7 +178,7 @@ object ConversationEventParser {
      */
     private fun parseInterruption(jsonObject: JsonObject): ConversationEvent.Interruption {
         return ConversationEvent.Interruption(
-            eventId = jsonObject.get("event_id")?.asString ?: "",
+            eventId = parseEventId(jsonObject),
             timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
         )
     }
@@ -272,29 +297,27 @@ object ConversationEventParser {
  */
 sealed class OutgoingEvent {
     abstract val type: String
-    abstract val eventId: String
 
     /**
      * User message event
      */
     data class UserMessage(
-        val content: String,
-        @SerializedName("event_id")
-        override val eventId: String = generateEventId()
+        val text: String,
     ) : OutgoingEvent() {
         override val type = "user_message"
+    }
+
+    class UserActivity : OutgoingEvent() {
+        override val type = "user_activity"
     }
 
     /**
      * Feedback event
      */
     data class Feedback(
-        @SerializedName("is_positive")
-        val isPositive: Boolean,
-        @SerializedName("target_event_id")
-        val targetEventId: String,
+        val score: String, // "like" or "dislike"
         @SerializedName("event_id")
-        override val eventId: String = generateEventId()
+        val eventId: Int
     ) : OutgoingEvent() {
         override val type = "feedback"
     }
@@ -303,9 +326,7 @@ sealed class OutgoingEvent {
      * Contextual update event
      */
     data class ContextualUpdate(
-        val content: String,
-        @SerializedName("event_id")
-        override val eventId: String = generateEventId()
+        val text: String,
     ) : OutgoingEvent() {
         override val type = "contextual_update"
     }
@@ -313,16 +334,14 @@ sealed class OutgoingEvent {
     /**
      * Tool result event
      */
-    data class ToolResult(
+    data class ClientToolResult(
         @SerializedName("tool_call_id")
         val toolCallId: String,
         val result: Map<String, Any>,
         @SerializedName("is_error")
         val isError: Boolean = false,
-        @SerializedName("event_id")
-        override val eventId: String = generateEventId()
     ) : OutgoingEvent() {
-        override val type = "tool_result"
+        override val type = "client_tool_result"
     }
 
     /**
@@ -330,17 +349,8 @@ sealed class OutgoingEvent {
      */
     data class Pong(
         @SerializedName("event_id")
-        override val eventId: String
+        val eventId: Int
     ) : OutgoingEvent() {
         override val type: String = "pong"
-    }
-
-    companion object {
-        /**
-         * Generate a unique event ID
-         */
-        private fun generateEventId(): String {
-            return "evt_${System.currentTimeMillis()}_${(1000..9999).random()}"
-        }
     }
 }

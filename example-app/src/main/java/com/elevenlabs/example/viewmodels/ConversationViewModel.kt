@@ -44,6 +44,10 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
     private val _mode = MutableLiveData<String>()
     val mode: LiveData<String> = _mode
 
+    // Can send feedback state
+    private val _canSendFeedback = MutableLiveData<Boolean>(false)
+    val canSendFeedback: LiveData<Boolean> = _canSendFeedback
+
     fun startConversation(activityContext: Context) {
         if (currentSession != null && _uiState.value != UiState.Idle && _uiState.value !is UiState.Error) {
             Log.d("ConversationViewModel", "Session already active or connecting.")
@@ -88,12 +92,12 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                         Log.d("ConversationViewModel", "onStatusChange: $status")
                     },
                     onCanSendFeedbackChange = { canSendFeedback ->
+                        _canSendFeedback.postValue(canSendFeedback)
                         Log.d("ConversationViewModel", "onCanSendFeedbackChange: $canSendFeedback")
                     },
                     onUnhandledClientToolCall = { toolCall ->
                         Log.d("ConversationViewModel", "onUnhandledClientToolCall: $toolCall")
                     }
-
                 )
 
                 val session = ConversationClient.startSession(config, activityContext)
@@ -161,6 +165,11 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
 
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun sendFeedback(isPositive: Boolean) {
+        currentSession?.sendFeedback(isPositive)
+        Log.d("ConversationViewModel", "Sent ${if (isPositive) "positive" else "negative"} feedback")
     }
 
     override fun onCleared() {

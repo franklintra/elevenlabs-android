@@ -97,7 +97,7 @@ internal class ConversationSessionImpl(
             if (!config.textOnly) {
                 if (audioManager.hasAudioPermission()) {
                     // small delay to ensure LK internal state is ready
-                    delay(150)
+                    // delay(150)
                     audioManager.startRecording()
                     audioManager.startPlayback()
                 } else {

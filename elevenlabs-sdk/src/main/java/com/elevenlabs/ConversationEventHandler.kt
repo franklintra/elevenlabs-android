@@ -31,7 +31,11 @@ class ConversationEventHandler(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages
 
-    private val _lastAgentEventId = MutableStateFlow<String?>(null)
+    // Keep track of the last agent event ID for feedback
+    private var _lastAgentEventId: Int? = null
+
+    // Keep track of the last event ID we sent feedback for to prevent duplicates
+    private var _lastFeedbackSentForEventIdInt: Int? = null
 
     /**
      * Handle incoming conversation events
@@ -74,8 +78,13 @@ class ConversationEventHandler(
         addMessageToHistory(message)
 
         // Store the last agent event ID for feedback
-        _lastAgentEventId.value = event.eventId
-        onCanSendFeedbackChange?.invoke(true)
+        _lastAgentEventId = event.eventId
+
+        // Only enable feedback if this is a newer event than the last one we sent feedback for
+        val canSendFeedback = _lastFeedbackSentForEventIdInt?.let { lastFeedbackId ->
+            event.eventId > lastFeedbackId
+        } ?: true
+        onCanSendFeedbackChange?.invoke(canSendFeedback)
 
         // If this is a voice conversation, ensure audio playback is active
         if (!audioManager.isPlaying()) {
@@ -141,7 +150,7 @@ class ConversationEventHandler(
 
             // Send result back to agent if response is expected
             if (event.expectsResponse) {
-                val toolResultEvent = OutgoingEvent.ToolResult(
+                val toolResultEvent = OutgoingEvent.ClientToolResult(
                     toolCallId = event.toolCallId,
                     result = mapOf<String, Any>(
                         "success" to result.success,
@@ -173,7 +182,7 @@ class ConversationEventHandler(
         // Reply with pong using same event id
         scope.launch {
             try {
-                val pong = OutgoingEvent.Pong(eventId = event.eventId.toString())
+                val pong = OutgoingEvent.Pong(eventId = event.eventId)
                 messageCallback(pong)
             } catch (e: Exception) {
                 Log.d("ConversationEventHandler", "Failed to send pong: ${e.message}")
@@ -190,14 +199,14 @@ class ConversationEventHandler(
         if (event.score > 0.7f) {
             Log.d("ConversationEventHandler", "High voice activity detected: ${event.score}")
         }
+
+        // TODO call onVadScore
     }
 
     /**
      * Handle connection state change events
      */
     private fun handleConnectionStateChange(event: ConversationEvent.ConnectionStateChange) {
-        Log.d("ConversationEventHandler", "Connection state changed: ${event.status} ${event.reason?.let { "($it)" } ?: ""}")
-
         // Handle specific connection states
         when (event.status) {
             ConversationStatus.CONNECTED -> {
@@ -218,7 +227,8 @@ class ConversationEventHandler(
             }
             ConversationStatus.ERROR -> {
                 // Connection error - handle gracefully
-        Log.d("ConversationEventHandler", "Connection error occurred")
+                // TODO call onConnectionError
+                Log.d("ConversationEventHandler", "Connection error occurred")
             }
             else -> {
                 // Other states (connecting, etc.)
@@ -230,7 +240,7 @@ class ConversationEventHandler(
      * Handle error events
      */
     private fun handleError(event: ConversationEvent.Error) {
-        Log.d("ConversationEventHandler", "Conversation error: ${event.error} ${event.code?.let { "(code: $it)" } ?: ""}")
+        Log.d("ConversationEventHandler", "Conversation error: ${event.error}")
 
         // Could implement specific error recovery logic here
         // For example, retry on certain error codes, reset state, etc.
@@ -242,17 +252,8 @@ class ConversationEventHandler(
      * @param content Message content to send
      */
     fun sendUserMessage(content: String) {
-        val event = OutgoingEvent.UserMessage(content)
+        val event = OutgoingEvent.UserMessage(text = content)
         messageCallback(event)
-
-        // Add to local message history
-        val message = Message(
-            id = event.eventId,
-            content = content,
-            role = MessageRole.USER,
-            timestamp = System.currentTimeMillis()
-        )
-        addMessageToHistory(message)
     }
 
     /**
@@ -261,16 +262,32 @@ class ConversationEventHandler(
      * @param isPositive true for positive feedback, false for negative
      */
     fun sendFeedback(isPositive: Boolean) {
-        val lastEventId = _lastAgentEventId.value
+        val lastEventId = _lastAgentEventId
+        val lastFeedbackSentForEventId = _lastFeedbackSentForEventIdInt
+
         if (lastEventId != null) {
-            val event = OutgoingEvent.Feedback(
-                isPositive = isPositive,
-                targetEventId = lastEventId
-            )
-            messageCallback(event)
-        Log.d("ConversationEventHandler", "Sent ${if (isPositive) "positive" else "negative"} feedback for event: $lastEventId")
+            // Check if we've already sent feedback for this event or a newer one
+            if (lastFeedbackSentForEventId != null && lastEventId <= lastFeedbackSentForEventId) {
+                Log.d("ConversationEventHandler", "Feedback already sent for event ID $lastEventId (last feedback sent for: $lastFeedbackSentForEventId)")
+                return
+            }
+
+            try {
+                val event = OutgoingEvent.Feedback(
+                    score = if (isPositive) "like" else "dislike",
+                    eventId = lastEventId
+                )
+                messageCallback(event)
+                Log.d("ConversationEventHandler", "Sent ${if (isPositive) "positive" else "negative"} feedback for event ID: $lastEventId")
+
+                // Track that we sent feedback for this event ID
+                _lastFeedbackSentForEventIdInt = lastEventId
+                onCanSendFeedbackChange?.invoke(false)
+            } catch (e: Exception) {
+                Log.d("ConversationEventHandler", "Error sending feedback: ${e.message}")
+            }
         } else {
-        Log.d("ConversationEventHandler", "No agent response to provide feedback for")
+            Log.d("ConversationEventHandler", "No agent response to provide feedback for")
         }
     }
 
@@ -280,7 +297,7 @@ class ConversationEventHandler(
      * @param content Context information to send
      */
     fun sendContextualUpdate(content: String) {
-        val event = OutgoingEvent.ContextualUpdate(content)
+        val event = OutgoingEvent.ContextualUpdate(text = content)
         messageCallback(event)
         Log.d("ConversationEventHandler", "Sent contextual update: $content")
     }
@@ -299,7 +316,8 @@ class ConversationEventHandler(
      */
     fun clearMessageHistory() {
         _messages.value = emptyList()
-        _lastAgentEventId.value = null
+        _lastAgentEventId = null
+        _lastFeedbackSentForEventIdInt = null
         Log.d("ConversationEventHandler", "Conversation history cleared")
     }
 

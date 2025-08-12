@@ -12,12 +12,12 @@ sealed class ConversationEvent {
      * Event representing a response from the agent
      *
      * @param content The agent's response text
-     * @param eventId Unique identifier for this event
+     * @param eventId Unique integer identifier for this event
      * @param timestamp When the event occurred
      */
     data class AgentResponse(
         val content: String,
-        val eventId: String,
+        val eventId: Int,
         val timestamp: Long = System.currentTimeMillis()
     ) : ConversationEvent()
 
@@ -25,13 +25,13 @@ sealed class ConversationEvent {
      * Event representing user speech transcription
      *
      * @param content The transcribed user speech
-     * @param eventId Unique identifier for this event
+     * @param eventId Unique integer identifier for this event
      * @param timestamp When the event occurred
      * @param isFinal Whether this is the final transcription or partial
      */
     data class UserTranscript(
         val content: String,
-        val eventId: String,
+        val eventId: Int,
         val timestamp: Long = System.currentTimeMillis(),
         val isFinal: Boolean = true
     ) : ConversationEvent()
@@ -39,11 +39,11 @@ sealed class ConversationEvent {
     /**
      * Event representing an interruption of agent speech
      *
-     * @param eventId The event ID that was interrupted
+     * @param eventId The integer event ID that was interrupted
      * @param timestamp When the interruption occurred
      */
     data class Interruption(
-        val eventId: String,
+        val eventId: Int,
         val timestamp: Long = System.currentTimeMillis()
     ) : ConversationEvent()
 

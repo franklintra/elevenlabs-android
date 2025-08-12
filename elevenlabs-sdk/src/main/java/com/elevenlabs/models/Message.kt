@@ -3,14 +3,14 @@ package com.elevenlabs.models
 /**
  * Represents a message in the conversation
  *
- * @param id Unique identifier for the message
+ * @param id Unique integer identifier for the message
  * @param content The text content of the message
  * @param role Who sent the message (user or agent)
  * @param timestamp When the message was sent
  * @param metadata Additional metadata about the message
  */
 data class Message(
-    val id: String,
+    val id: Int,
     val content: String,
     val role: MessageRole,
     val timestamp: Long = System.currentTimeMillis(),
