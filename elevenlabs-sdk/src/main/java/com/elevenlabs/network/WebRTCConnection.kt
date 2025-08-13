@@ -73,19 +73,6 @@ class WebRTCConnection(
             // Start message processing
             startMessageProcessing()
 
-            // This is updated here rather than in the Connected event handler to ensure that the connection state is updated before the overrides are sent
-            updateConnectionState(ConnectionState.CONNECTED)
-
-            // Send initiation overrides payload after connect
-            try {
-                val payload = ConversationOverridesBuilder
-                    .constructOverrides(config)
-                    .toString()
-                sendMessage(payload)
-            } catch (e: Exception) {
-                Log.d("WebRTCConnection", "failed to send overrides - ${e.message}")
-            }
-
         } catch (e: Exception) {
             updateConnectionState(ConnectionState.ERROR)
             throw RuntimeException("Failed to connect to LiveKit room", e)
@@ -97,19 +84,24 @@ class WebRTCConnection(
      */
     override fun disconnect() {
         try {
-            updateConnectionState(ConnectionState.DISCONNECTED)
-
-            // Stop message processing
+            // Stop message processing first
             messageJob?.cancel()
             messageJob = null
+
+            // Stop event handling
+            eventHandlerJob?.cancel()
+            eventHandlerJob = null
 
             // Disconnect from room
             room.disconnect()
             localParticipant = null
 
-            updateConnectionState(ConnectionState.DISCONNECTED)
+            // Reset to IDLE state to allow reconnection
+            updateConnectionState(ConnectionState.IDLE)
+            Log.d("WebRTCConnection", "Disconnected and reset to IDLE state")
 
         } catch (e: Exception) {
+            Log.d("WebRTCConnection", "Error during disconnect: ${e.message}")
             updateConnectionState(ConnectionState.ERROR)
         }
     }
@@ -154,15 +146,35 @@ class WebRTCConnection(
         this.connectionStateListener = listener
     }
 
+    private var eventHandlerJob: Job? = null
+
     /**
      * Set up LiveKit room event handlers
      */
     private fun setupRoomEventHandlers() {
-        scope.launch {
+        // Cancel any existing event handler
+        eventHandlerJob?.cancel()
+
+        eventHandlerJob = scope.launch {
             room.events.collect { event ->
                 when (event) {
                     is RoomEvent.Connected -> {
                         Log.d("WebRTCConnection", "Connected. roomSid=${room.sid}, name=${room.name}")
+                        // Mark connection as connected now that LK confirms
+                        updateConnectionState(ConnectionState.CONNECTED)
+
+                        // Send initiation overrides payload after actual connection
+                        try {
+                            latestConfig?.let { cfg ->
+                                val payload = ConversationOverridesBuilder
+                                    .constructOverrides(cfg)
+                                    .toString()
+                                sendMessage(payload)
+                            }
+                        } catch (e: Exception) {
+                            Log.d("WebRTCConnection", "failed to send overrides - ${e.message}")
+                        }
+
                         // invoke user callback if provided with extracted conversation id
                         try {
                             val roomName = room.name ?: ""
