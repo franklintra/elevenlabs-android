@@ -2,6 +2,7 @@ package io.elevenlabs
 
 import android.util.Log
 import kotlinx.coroutines.*
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
@@ -234,7 +235,7 @@ object CommonClientTools {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
             val format = parameters["format"] as? String ?: "yyyy-MM-dd HH:mm:ss"
             return try {
-                val currentTime = java.text.SimpleDateFormat(format).format(java.util.Date())
+                val currentTime = java.text.SimpleDateFormat(format, Locale.US).format(java.util.Date())
                 ClientToolResult.success("Current time: $currentTime")
             } catch (e: Exception) {
                 ClientToolResult.failure("Failed to format time: ${e.message}")

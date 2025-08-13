@@ -53,6 +53,8 @@ dependencies {
 Add microphone permission to your `AndroidManifest.xml`:
 ```xml
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
 Request runtime permission before starting a voice session. Camera permission is NOT required by this SDK.
