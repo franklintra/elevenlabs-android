@@ -68,7 +68,6 @@ sealed class ConversationEvent {
      * @param parameters Parameters to pass to the tool
      * @param toolCallId Unique identifier for this tool call
      * @param expectsResponse Whether the agent expects a response
-     * @param timestamp When the tool call was made
      */
     data class ClientToolCall(
         val toolName: String,
@@ -96,11 +95,9 @@ sealed class ConversationEvent {
      * Event representing voice activity detection score
      *
      * @param score VAD score (0.0 to 1.0, higher means more likely speech)
-     * @param timestamp When the score was calculated
      */
     data class VadScore(
         val score: Float,
-        val timestamp: Long = System.currentTimeMillis()
     ) : ConversationEvent()
 
     /**

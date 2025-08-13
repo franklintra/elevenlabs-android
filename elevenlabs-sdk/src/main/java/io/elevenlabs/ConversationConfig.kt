@@ -36,7 +36,8 @@ data class ConversationConfig(
     val onModeChange: ((mode: String) -> Unit)? = null,
     val onStatusChange: ((status: String) -> Unit)? = null,
     val onCanSendFeedbackChange: ((canSend: Boolean) -> Unit)? = null,
-    val onUnhandledClientToolCall: ((ClientToolCall) -> Unit)? = null
+    val onUnhandledClientToolCall: ((ClientToolCall) -> Unit)? = null,
+    val onVadScore: ((score: Float) -> Unit)? = null
 
 ) {
     init {

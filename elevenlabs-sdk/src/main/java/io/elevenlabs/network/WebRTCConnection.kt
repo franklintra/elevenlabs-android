@@ -110,7 +110,7 @@ class WebRTCConnection(
      * Send a message through the data channel
      */
     override fun sendMessage(message: Any) {
-        if (!isConnected) {
+        if (!connectionState.isActive) {
             throw IllegalStateException("Not connected")
         }
 
@@ -219,7 +219,7 @@ class WebRTCConnection(
                     }
 
                     is RoomEvent.DataReceived -> {
-                        event.data?.let { handleDataReceived(it, event.participant) }
+                        handleDataReceived(event.data, event.participant)
                     }
 
                     else -> {

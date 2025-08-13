@@ -86,9 +86,10 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                     onConnect = { conversationId ->
                         Log.d("ConversationViewModel", "Connected id=$conversationId")
                     },
-                    // onMessage = { source, message ->
-                    //      Log.d("ConversationViewModel", "onMessage [$source]: $message")
-                    //  },
+                    onMessage = { source, message ->
+                        // Receive messages from the server. Can be quite noisy hence commented out
+                        // Log.d("ConversationViewModel", "onMessage [$source]: $message")
+                     },
                     onModeChange = { mode ->
                         _mode.postValue(mode)
                     },
@@ -101,6 +102,12 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                     },
                     onUnhandledClientToolCall = { toolCall ->
                         Log.d("ConversationViewModel", "onUnhandledClientToolCall: $toolCall")
+                    },
+                    onVadScore = { score ->
+                        // VAD score is used to determine if the user is speaking.
+                        // Can be used to trigger UI changes or audio processing decisions.
+                        // Log commented out as it's quite noisy
+                        // Log.d("ConversationViewModel", "onVadScore: $score")
                     }
                 )
 

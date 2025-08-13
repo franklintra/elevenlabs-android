@@ -176,11 +176,14 @@ object ConversationEventParser {
 
     /**
      * Parse VAD score event
+     * Matches payload: {"type":"vad_score","vad_score_event":{"vad_score":0.95}}
      */
     private fun parseVadScore(jsonObject: JsonObject): ConversationEvent.VadScore {
+        val obj = jsonObject.getAsJsonObject("vad_score_event") ?: jsonObject
+        val score = obj.get("vad_score")?.asFloat ?: 0.0f
+
         return ConversationEvent.VadScore(
-            score = jsonObject.get("score")?.asFloat ?: 0.0f,
-            timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
+            score = score,
         )
     }
 

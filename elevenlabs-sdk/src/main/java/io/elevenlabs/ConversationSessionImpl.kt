@@ -9,6 +9,8 @@ import io.elevenlabs.audio.AudioManager
 import io.elevenlabs.audio.LiveKitAudioManager
 import io.elevenlabs.models.ConversationMode
 import io.elevenlabs.models.ConversationStatus
+import io.elevenlabs.models.toConversationStatus
+import io.elevenlabs.network.ConnectionState
 import io.elevenlabs.network.BaseConnection
 import io.elevenlabs.network.ConversationEventParser
 import io.elevenlabs.network.WebRTCConnection
@@ -46,6 +48,9 @@ internal class ConversationSessionImpl(
         },
         onUnhandledClientToolCall = { call ->
             try { config.onUnhandledClientToolCall?.invoke(call) } catch (_: Throwable) {}
+        },
+        onVadScore = { score ->
+            try { config.onVadScore?.invoke(score) } catch (_: Throwable) {}
         }
     )
 
@@ -76,14 +81,7 @@ internal class ConversationSessionImpl(
 
             // Set up connection state listener
             connection.setOnConnectionStateListener { connectionState ->
-                val conversationStatus = when (connectionState) {
-                    io.elevenlabs.network.ConnectionState.CONNECTED -> ConversationStatus.CONNECTED
-                    io.elevenlabs.network.ConnectionState.CONNECTING -> ConversationStatus.CONNECTING
-                    io.elevenlabs.network.ConnectionState.DISCONNECTED -> ConversationStatus.DISCONNECTED
-                    io.elevenlabs.network.ConnectionState.ERROR -> ConversationStatus.ERROR
-                    else -> ConversationStatus.DISCONNECTED
-                }
-                _status.value = conversationStatus
+                _status.value = connectionState.toConversationStatus()
             }
 
             // Start the connection

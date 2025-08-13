@@ -19,7 +19,8 @@ class ConversationEventHandler(
     private val toolRegistry: ClientToolRegistry,
     private val messageCallback: (OutgoingEvent) -> Unit,
     private val onCanSendFeedbackChange: ((Boolean) -> Unit)? = null,
-    private val onUnhandledClientToolCall: ((ConversationEvent.ClientToolCall) -> Unit)? = null
+    private val onUnhandledClientToolCall: ((ConversationEvent.ClientToolCall) -> Unit)? = null,
+    private val onVadScore: ((Float) -> Unit)? = null
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -171,13 +172,12 @@ class ConversationEventHandler(
      * Handle VAD (Voice Activity Detection) score events
      */
     private fun handleVadScore(event: ConversationEvent.VadScore) {
-        // VAD scores can be used for UI indicators or audio processing decisions
-        // For now, we'll just log them
-        if (event.score > 0.7f) {
-            Log.d("ConvEventHandler", "High voice activity detected: ${event.score}")
+        // Invoke the onVadScore callback if provided
+        try {
+            onVadScore?.invoke(event.score)
+        } catch (e: Exception) {
+            Log.d("ConvEventHandler", "Error in onVadScore callback: ${e.message}")
         }
-
-        // TODO call onVadScore
     }
 
     /**

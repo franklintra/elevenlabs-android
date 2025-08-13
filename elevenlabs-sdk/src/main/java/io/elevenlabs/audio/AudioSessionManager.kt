@@ -2,6 +2,7 @@ package io.elevenlabs.audio
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager as SystemAudioManager
 import android.os.Build
@@ -26,9 +27,8 @@ class AudioSessionManager(private val context: Context) {
 
     /**
      * Configure audio session for voice communication
-     * @param settings Audio settings to apply
      */
-    fun configureForVoiceCall(settings: AudioSettings = AudioSettings.VOICE_CALL_OPTIMIZED) {
+    fun configureForVoiceCall() {
         try {
             // Set audio mode for voice communication
             audioManager.mode = SystemAudioManager.MODE_IN_COMMUNICATION
@@ -36,14 +36,11 @@ class AudioSessionManager(private val context: Context) {
             // Request audio focus
             requestAudioFocus()
 
-            // Configure additional settings based on the provided AudioSettings
-            applyAudioSettings(settings)
-
             // Ensure audio routes to speaker (important on emulator/voice calls)
-            audioManager.isSpeakerphoneOn = true
+            setSpeakerphoneEnabledCompat(true)
             val vol = audioManager.getStreamVolume(SystemAudioManager.STREAM_VOICE_CALL)
             val max = audioManager.getStreamMaxVolume(SystemAudioManager.STREAM_VOICE_CALL)
-            Log.d("AudioSessionManager", "MODE_IN_COMMUNICATION, speakerphoneOn=${audioManager.isSpeakerphoneOn}, voiceVol=$vol/$max")
+            Log.d("AudioSessionManager", "MODE_IN_COMMUNICATION, speakerphoneOn=${isSpeakerphoneEnabledCompat()}, voiceVol=$vol/$max")
 
         } catch (e: Exception) {
             Log.d("AudioSessionManager", "Failed to configure audio session: ${e.message}")
@@ -52,18 +49,14 @@ class AudioSessionManager(private val context: Context) {
 
     /**
      * Configure audio session for media playback
-     * @param settings Audio settings to apply
      */
-    fun configureForMedia(settings: AudioSettings = AudioSettings.HIGH_QUALITY) {
+    fun configureForMedia() {
         try {
             // Set audio mode for media playback
             audioManager.mode = SystemAudioManager.MODE_NORMAL
 
             // Request audio focus
             requestAudioFocus()
-
-            // Configure additional settings
-            applyAudioSettings(settings)
 
         } catch (e: Exception) {
             Log.d("AudioSessionManager", "Failed to configure audio session for media: ${e.message}")
@@ -185,19 +178,63 @@ class AudioSessionManager(private val context: Context) {
     }
 
     /**
-     * Apply audio settings to the session
+     * Set speakerphone enabled/disabled using modern API when available
      */
-    private fun applyAudioSettings(settings: AudioSettings) {
-        // Note: Some of these settings might need to be applied at the track level
-        // This is a placeholder for where system-level audio settings would be configured
+    private fun setSpeakerphoneEnabledCompat(enabled: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Use modern communication device API (Android 12+)
+            setSpeakerphoneModern(enabled)
+        } else {
+            // Fallback to deprecated API for older devices
+            @Suppress("DEPRECATION")
+            audioManager.isSpeakerphoneOn = enabled
+        }
+    }
 
-        // Set speaker phone if needed
-        // audioManager.isSpeakerphoneOn = false // or true based on user preference
+    /**
+     * Check if speakerphone is enabled using modern API when available
+     */
+    private fun isSpeakerphoneEnabledCompat(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Use modern communication device API (Android 12+)
+            getSpeakerphoneStateModern()
+        } else {
+            // Fallback to deprecated API for older devices
+            @Suppress("DEPRECATION")
+            audioManager.isSpeakerphoneOn
+        }
+    }
 
-        // Set microphone mute state
-        // audioManager.isMicrophoneMute = false
+    /**
+     * Set speakerphone using modern communication device API (Android 12+)
+     */
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun setSpeakerphoneModern(enabled: Boolean) {
+        if (enabled) {
+            // Enable speakerphone by setting communication device to built-in speaker
+            val speakerDevice = audioManager.availableCommunicationDevices.find {
+                it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            }
+            speakerDevice?.let { device ->
+                audioManager.setCommunicationDevice(device)
+            } ?: run {
+                Log.w("AudioSessionManager", "Built-in speaker device not found, falling back to deprecated API")
+                @Suppress("DEPRECATION")
+                audioManager.isSpeakerphoneOn = true
+            }
+        } else {
+            // Disable speakerphone by clearing communication device
+            audioManager.clearCommunicationDevice()
+        }
+    }
 
-        Log.d("AudioSessionManager", "Applied audio settings: sampleRate=${settings.sampleRate}, channels=${settings.channels}")
+    /**
+     * Check speakerphone state using modern communication device API (Android 12+)
+     */
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun getSpeakerphoneStateModern(): Boolean {
+        val currentDevice = audioManager.communicationDevice
+        return currentDevice?.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
     }
 
     /**
@@ -207,7 +244,7 @@ class AudioSessionManager(private val context: Context) {
         try {
             abandonAudioFocus()
             audioManager.mode = SystemAudioManager.MODE_NORMAL
-            audioManager.isSpeakerphoneOn = false
+            setSpeakerphoneEnabledCompat(false)
 
         } catch (e: Exception) {
             Log.d("AudioSessionManager", "Failed to reset audio session: ${e.message}")
@@ -228,13 +265,13 @@ class AudioSessionManager(private val context: Context) {
      * Set speaker phone enabled/disabled
      */
     fun setSpeakerPhoneEnabled(enabled: Boolean) {
-        audioManager.isSpeakerphoneOn = enabled
+        setSpeakerphoneEnabledCompat(enabled)
     }
 
     /**
      * Check if speaker phone is enabled
      */
-    fun isSpeakerPhoneEnabled(): Boolean = audioManager.isSpeakerphoneOn
+    fun isSpeakerPhoneEnabled(): Boolean = isSpeakerphoneEnabledCompat()
 
     /**
      * Set microphone mute state

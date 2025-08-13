@@ -98,6 +98,9 @@ val config = ConversationConfig(
     onUnhandledClientToolCall = { call ->
         // Agent requested a client tool not registered on the device
     },
+    onVadScore = { score ->
+        // Voice Activity Detection score, range from 0 to 1 where higher values indicate higher confidence of speech
+    }
     // List of client tools the agent can invoke
     clientTools = mapOf(
         "logMessage" to object : ClientTool {
@@ -150,6 +153,7 @@ session.endSession()
 - **onStatusChange(status: String)**: `"connected" | "connecting" | "disconnected"`.
 - **onCanSendFeedbackChange(canSend: Boolean)**: Enable/disable feedback buttons.
 - **onUnhandledClientToolCall(call)**: Agent attempted to call a client tool not registered on the device.
+- **onVadScore**: Voice Activity Detection score. Ranges from 0 to 1 where higher values indicate confidence of speech.
 
 ---
 
@@ -247,10 +251,3 @@ If you shrink/obfuscate, ensure Gson models and LiveKit are kept. Example rules 
 - Ensure microphone permission is granted at runtime
 - If reconnect hangs, verify your app calls `session.endSession()` and that you start a new session instance before reconnecting
 - For emulators, verify audio input/output routes are working; physical devices tend to behave more reliably
-
----
-
-## License
-
-Copyright (c) ElevenLabs. All rights reserved. See your commercial agreement for terms.
-

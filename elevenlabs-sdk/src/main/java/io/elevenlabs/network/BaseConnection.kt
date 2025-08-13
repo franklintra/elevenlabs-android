@@ -51,10 +51,4 @@ abstract class BaseConnection {
      * Get the current connection state
      */
     abstract val connectionState: ConnectionState
-
-    /**
-     * Returns true if the connection is currently active
-     */
-    val isConnected: Boolean
-        get() = connectionState.isConnected
 }

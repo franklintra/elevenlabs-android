@@ -1,9 +1,14 @@
 package io.elevenlabs.network
 
+import io.elevenlabs.models.Status
+
 /**
  * Represents the current state of a network connection
+ *
+ * This represents the low-level network connection state used internally
+ * by connection implementations like WebRTCConnection.
  */
-enum class ConnectionState {
+enum class ConnectionState : Status {
     /**
      * No connection established
      */
@@ -37,18 +42,18 @@ enum class ConnectionState {
     /**
      * Returns true if the connection is in an active state
      */
-    val isConnected: Boolean
+    override val isActive: Boolean
         get() = this == CONNECTED
 
     /**
      * Returns true if the connection is in a transitional state
      */
-    val isTransitioning: Boolean
+    override val isTransitioning: Boolean
         get() = this == CONNECTING || this == RECONNECTING
 
     /**
-     * Returns true if the connection has failed
+     * Returns true if the connection has failed or is in error state
      */
-    val isFailed: Boolean
-        get() = this == ERROR || this == DISCONNECTED
+    override val hasError: Boolean
+        get() = this == ERROR
 }

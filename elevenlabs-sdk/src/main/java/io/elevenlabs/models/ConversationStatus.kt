@@ -1,9 +1,12 @@
 package io.elevenlabs.models
 
 /**
- * Enum representing the current connection status of a conversation session
+ * Enum representing the current status of a conversation session
+ *
+ * This represents the high-level conversation lifecycle that app developers
+ * interact with, abstracting away low-level network connection details.
  */
-enum class ConversationStatus {
+enum class ConversationStatus : Status {
     /**
      * The session is not connected
      */
@@ -32,12 +35,18 @@ enum class ConversationStatus {
     /**
      * Returns true if the session is in an active state (connected)
      */
-    val isActive: Boolean
+    override val isActive: Boolean
         get() = this == CONNECTED
 
     /**
      * Returns true if the session is in a transitional state
      */
-    val isTransitioning: Boolean
+    override val isTransitioning: Boolean
         get() = this == CONNECTING || this == DISCONNECTING
+
+    /**
+     * Returns true if the session is in an error state
+     */
+    override val hasError: Boolean
+        get() = this == ERROR
 }

@@ -3,7 +3,6 @@ package io.elevenlabs.network
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import android.util.Log
-import io.elevenlabs.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -56,8 +55,6 @@ class TokenService(
             try {
                 val parsed = gson.fromJson(responseBody, TokenResponse::class.java)
                     ?: throw TokenServiceException("Failed to parse token response")
-
-                Log.d("TokenService", "Public agent token fetched for agentId=$agentId, tokenLength=${parsed.token.length}, wsUrl=${parsed.webSocketUrl}")
                 parsed
             } catch (e: Exception) {
                 throw TokenServiceException("Failed to parse token response: ${e.message}", e)
@@ -83,18 +80,10 @@ class TokenService(
  * Response from the ElevenLabs token API
  *
  * @param token The conversation token to use for authentication
- * @param webSocketUrl The WebSocket URL for the conversation connection
- * @param expires Optional expiration timestamp for the token
  */
 data class TokenResponse(
     @SerializedName("token")
     val token: String,
-
-    @SerializedName("websocket_url")
-    val webSocketUrl: String? = null,
-
-    @SerializedName("expires")
-    val expires: Long? = null
 )
 
 /**

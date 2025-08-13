@@ -39,9 +39,6 @@ object AudioUtils {
         // Set audio mode for voice communication
         audioManager.mode = SystemAudioManager.MODE_IN_COMMUNICATION
 
-        // Enable speaker phone if needed (can be controlled separately)
-        // audioManager.isSpeakerphoneOn = false
-
         // Request audio focus for voice calls
         requestAudioFocus(audioManager)
     }
