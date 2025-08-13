@@ -25,7 +25,7 @@
 -keep class org.webrtc.** { *; }
 
 # Keep ElevenLabs SDK public API
--keep public class com.elevenlabs.** { *; }
+-keep public class io.elevenlabs.** { *; }
 
 # Keep Gson TypeAdapters and TypeTokens
 -keepattributes Signature
@@ -34,7 +34,7 @@
 -keep class * extends com.google.gson.reflect.TypeToken
 
 # Keep model classes for JSON serialization
--keep class com.elevenlabs.models.** { *; }
+-keep class io.elevenlabs.models.** { *; }
 
 # Keep WebRTC audio classes
 -keep class org.webrtc.audio.** { *; }

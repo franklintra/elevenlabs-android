@@ -3,8 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+group = "io.elevenlabs"
+version = "0.1.0"
+
 android {
-    namespace = "com.elevenlabs"
+namespace = "io.elevenlabs"
     compileSdk = 35
 
     defaultConfig {
@@ -12,6 +15,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "SDK_VERSION", "\"${project.version}\"")
     }
 
     buildTypes {

@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.elevenlabs.example"
+namespace = "io.elevenlabs.example"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.elevenlabs.example"
+applicationId = "io.elevenlabs.example"
         minSdk = 21
         targetSdk = 34
         versionCode = 1
