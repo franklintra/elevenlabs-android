@@ -36,7 +36,7 @@ interface AudioManager {
      * Set the microphone mute state
      * @param muted true to mute microphone, false to unmute
      */
-    suspend fun setMuted(muted: Boolean)
+    suspend fun setMicMuted(muted: Boolean)
 
     /**
      * Check if the microphone is currently muted
@@ -61,13 +61,6 @@ interface AudioManager {
      * @return true if permission is granted, false otherwise
      */
     fun hasAudioPermission(): Boolean
-
-    /**
-     * Request audio recording permission
-     * This should trigger the system permission dialog
-     * @return true if permission was granted, false if denied
-     */
-    suspend fun requestAudioPermission(): Boolean
 
     /**
      * Check if audio recording is currently active

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -33,6 +34,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var feedbackContainer: android.widget.LinearLayout
     private lateinit var thumbsUpButton: Button
     private lateinit var thumbsDownButton: Button
+    private lateinit var contextualEditText: EditText
+    private lateinit var contextualSendButton: Button
+    private lateinit var userSendButton: Button
+    private lateinit var contextualButtonsRow: android.widget.LinearLayout
+    private lateinit var muteButton: Button
+    private lateinit var muteContainer: android.widget.LinearLayout
 
     // No broadcast receiver; we use ViewModel.mode
     private lateinit var connectButton: Button
@@ -70,6 +77,12 @@ class MainActivity : AppCompatActivity() {
         thumbsUpButton = findViewById(R.id.thumbsUpButton)
         thumbsDownButton = findViewById(R.id.thumbsDownButton)
         connectButton = findViewById(R.id.connectButton)
+        contextualEditText = findViewById(R.id.contextualEditText)
+        contextualButtonsRow = findViewById(R.id.contextualButtonsRow)
+        contextualSendButton = findViewById(R.id.contextualSendButton)
+        userSendButton = findViewById(R.id.userSendButton)
+        muteButton = findViewById(R.id.muteButton)
+        muteContainer = findViewById(R.id.muteContainer)
 
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
@@ -98,6 +111,43 @@ class MainActivity : AppCompatActivity() {
             thumbsDownButton.isEnabled = false
             viewModel.sendFeedback(false)
         }
+
+        // Contextual update send button
+        contextualSendButton.setOnClickListener {
+            val text = contextualEditText.text?.toString()?.trim().orEmpty()
+            if (text.isNotEmpty()) {
+                viewModel.sendContextualUpdate(text)
+                contextualEditText.text?.clear()
+            }
+        }
+
+        // User message send button
+        userSendButton.setOnClickListener {
+            val text = contextualEditText.text?.toString()?.trim().orEmpty()
+            if (text.isNotEmpty()) {
+                viewModel.sendUserMessage(text)
+                contextualEditText.text?.clear()
+            }
+        }
+
+        // Mute/unmute toggle
+        muteButton.setOnClickListener {
+            viewModel.toggleMute()
+        }
+
+        // Reflect mute state label based on current value when available
+        viewModel.isMuted.observe(this) { muted ->
+            muteButton.text = if (muted == true) "Unmute" else "Mute"
+        }
+
+        // Send user activity when typing
+        contextualEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.sendUserActivity()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
     }
 
     private fun setupObservers() {
@@ -182,7 +232,16 @@ class MainActivity : AppCompatActivity() {
         modeContainer.visibility = if (status == ConversationStatus.CONNECTED) android.view.View.VISIBLE else android.view.View.GONE
 
         // Show/hide feedback container with connection
-        feedbackContainer.visibility = if (status == ConversationStatus.CONNECTED) android.view.View.VISIBLE else android.view.View.GONE
+        val isConnected = status == ConversationStatus.CONNECTED
+        feedbackContainer.visibility = if (isConnected) android.view.View.VISIBLE else android.view.View.GONE
+
+        // Show/hide contextual UI and enable send only when connected
+        contextualEditText.visibility = if (isConnected) android.view.View.VISIBLE else android.view.View.GONE
+        contextualButtonsRow.visibility = if (isConnected) android.view.View.VISIBLE else android.view.View.GONE
+        contextualSendButton.isEnabled = isConnected
+        userSendButton.isEnabled = isConnected
+        muteContainer.visibility = if (isConnected) android.view.View.VISIBLE else android.view.View.GONE
+        muteButton.isEnabled = isConnected
     }
 
     private fun updateModeUI(mode: String) {

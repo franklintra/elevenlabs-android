@@ -9,42 +9,56 @@ package com.elevenlabs.models
 sealed class ConversationEvent {
 
     /**
+     * Event representing the metadata for the conversation
+     *
+     * @param conversationId The unique identifier for the conversation
+     * @param agentOutputAudioFormat The audio format for the agent's output
+     * @param userInputAudioFormat The audio format for the user's input
+     */
+    data class ConversationInitiationMetadata(
+        val conversationId: String,
+        val agentOutputAudioFormat: String,
+        val userInputAudioFormat: String,
+    ) : ConversationEvent()
+
+    /**
+     * Event representing audio data
+     *
+     * @param eventId The unique identifier for the event
+     * @param audioBase64 The base64 encoded audio data
+     */
+    data class Audio(
+        val eventId: Int,
+        val audioBase64: String,
+    ) : ConversationEvent()
+
+    /**
      * Event representing a response from the agent
      *
-     * @param content The agent's response text
-     * @param eventId Unique integer identifier for this event
-     * @param timestamp When the event occurred
+     * @param agentResponse The agent's response text
      */
     data class AgentResponse(
-        val content: String,
-        val eventId: Int,
-        val timestamp: Long = System.currentTimeMillis()
+        val agentResponse: String,
+    ) : ConversationEvent()
+
+    /**
+     * Event representing a correction to the agent's response after interruption
+     *
+     * @param originalAgentResponse The original agent response text
+     * @param correctedAgentResponse The corrected agent response text
+     */
+    data class AgentResponseCorrection(
+        val originalAgentResponse: String,
+        val correctedAgentResponse: String,
     ) : ConversationEvent()
 
     /**
      * Event representing user speech transcription
      *
-     * @param content The transcribed user speech
-     * @param eventId Unique integer identifier for this event
-     * @param timestamp When the event occurred
-     * @param isFinal Whether this is the final transcription or partial
+     * @param userTranscript The transcribed user speech
      */
     data class UserTranscript(
-        val content: String,
-        val eventId: Int,
-        val timestamp: Long = System.currentTimeMillis(),
-        val isFinal: Boolean = true
-    ) : ConversationEvent()
-
-    /**
-     * Event representing an interruption of agent speech
-     *
-     * @param eventId The integer event ID that was interrupted
-     * @param timestamp When the interruption occurred
-     */
-    data class Interruption(
-        val eventId: Int,
-        val timestamp: Long = System.currentTimeMillis()
+        val userTranscript: String,
     ) : ConversationEvent()
 
     /**
@@ -61,18 +75,21 @@ sealed class ConversationEvent {
         val parameters: Map<String, Any>,
         val toolCallId: String,
         val expectsResponse: Boolean = true,
-        val timestamp: Long = System.currentTimeMillis()
     ) : ConversationEvent()
 
     /**
-     * Event representing a change in conversation mode
+     * Event representing a response from an agent tool call
      *
-     * @param mode The new conversation mode
-     * @param timestamp When the mode changed
+     * @param toolName The name of the tool that responded
+     * @param toolCallId The unique identifier for the tool call
+     * @param toolType The type of tool that responded
+     * @param isError Whether the tool call resulted in an error
      */
-    data class ModeChange(
-        val mode: ConversationMode,
-        val timestamp: Long = System.currentTimeMillis()
+    data class AgentToolResponse(
+        val toolName: String,
+        val toolCallId: String,
+        val toolType: String,
+        val isError: Boolean,
     ) : ConversationEvent()
 
     /**
@@ -87,38 +104,22 @@ sealed class ConversationEvent {
     ) : ConversationEvent()
 
     /**
-     * Event representing connection state changes
-     *
-     * @param status The new connection status
-     * @param reason Optional reason for the status change
-     * @param timestamp When the status changed
-     */
-    data class ConnectionStateChange(
-        val status: ConversationStatus,
-        val reason: String? = null,
-        val timestamp: Long = System.currentTimeMillis()
-    ) : ConversationEvent()
-
-    /**
-     * Event representing an error that occurred during the conversation
-     *
-     * @param error The error message or description
-     * @param code Optional error code
-     * @param timestamp When the error occurred
-     */
-    data class Error(
-        val error: String,
-        val code: String? = null,
-        val timestamp: Long = System.currentTimeMillis()
-    ) : ConversationEvent()
-
-    /**
      * Event representing a ping from the agent
-     * Matches payload: {"ping_event":{"event_id":3,"ping_ms":null},"type":"ping"}
+     *
+     * @param eventId The unique identifier for the event
+     * @param pingMs The time in milliseconds since the last ping
      */
     data class Ping(
         val eventId: Int,
         val pingMs: Long?
+    ) : ConversationEvent()
+
+    /**
+     * Event representing an interruption of agent speech
+     * Matches payload: {"interruption_event":{"event_id":119},"type":"interruption"}
+     */
+    data class Interruption(
+        val eventId: Int
     ) : ConversationEvent()
 
 }

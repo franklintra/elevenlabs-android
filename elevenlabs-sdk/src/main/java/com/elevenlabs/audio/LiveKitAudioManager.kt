@@ -119,16 +119,8 @@ class LiveKitAudioManager(
         }
     }
 
-    override suspend fun setMuted(muted: Boolean) {
+    override suspend fun setMicMuted(muted: Boolean) {
         try {
-            // Set mute state for local audio track
-            // Note: LiveKit API for muting might be different - this is a placeholder
-            localAudioTrack?.let { track ->
-                // TODO: Implement proper muting when LiveKit API is clarified
-                // track.setEnabled(!muted) or similar
-            }
-
-            // Also set system-level mute
             AudioUtils.setMicrophoneMuted(context, muted)
 
             _isMuted.value = muted
@@ -163,14 +155,6 @@ class LiveKitAudioManager(
     override fun getVolume(): Float = _volume.value
 
     override fun hasAudioPermission(): Boolean = AudioUtils.hasAudioPermission(context)
-
-    override suspend fun requestAudioPermission(): Boolean {
-        return if (context is Activity) {
-            AudioUtils.requestAudioPermission(context)
-        } else {
-            false
-        }
-    }
 
     override fun isRecording(): Boolean = _isRecording.value
 

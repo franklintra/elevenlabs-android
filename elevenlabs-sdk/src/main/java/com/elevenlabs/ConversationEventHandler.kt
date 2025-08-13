@@ -28,9 +28,6 @@ class ConversationEventHandler(
     private val _conversationMode = MutableStateFlow(ConversationMode.LISTENING)
     val conversationMode: StateFlow<ConversationMode> = _conversationMode
 
-    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    val messages: StateFlow<List<Message>> = _messages
-
     // Keep track of the last agent event ID for feedback
     private var _lastAgentEventId: Int? = null
 
@@ -47,13 +44,15 @@ class ConversationEventHandler(
             when (event) {
                 is ConversationEvent.AgentResponse -> handleAgentResponse(event)
                 is ConversationEvent.UserTranscript -> handleUserTranscript(event)
-                is ConversationEvent.Interruption -> handleInterruption(event)
                 is ConversationEvent.ClientToolCall -> handleClientToolCall(event)
-                is ConversationEvent.ModeChange -> handleModeChange(event)
                 is ConversationEvent.VadScore -> handleVadScore(event)
-                is ConversationEvent.ConnectionStateChange -> handleConnectionStateChange(event)
                 is ConversationEvent.Ping -> handlePing(event)
-                is ConversationEvent.Error -> handleError(event)
+                is ConversationEvent.AgentResponseCorrection -> handleAgentResponseCorrection(event)
+                is ConversationEvent.AgentToolResponse -> handleAgentToolResponse(event)
+                is ConversationEvent.Audio -> handleAudio(event)
+                is ConversationEvent.ConversationInitiationMetadata -> handleConversationInitiationMetadata(event)
+                is ConversationEvent.Interruption -> handleInterruption(event)
+
             }
         } catch (e: Exception) {
             Log.d("ConversationEventHandler", "Error handling conversation event: ${e.message}")
@@ -68,23 +67,8 @@ class ConversationEventHandler(
         // Update conversation mode to speaking
         _conversationMode.value = ConversationMode.SPEAKING
 
-        // Add message to conversation history
-        val message = Message(
-            id = event.eventId,
-            content = event.content,
-            role = MessageRole.AGENT,
-            timestamp = event.timestamp
-        )
-        addMessageToHistory(message)
-
-        // Store the last agent event ID for feedback
-        _lastAgentEventId = event.eventId
-
-        // Only enable feedback if this is a newer event than the last one we sent feedback for
-        val canSendFeedback = _lastFeedbackSentForEventIdInt?.let { lastFeedbackId ->
-            event.eventId > lastFeedbackId
-        } ?: true
-        onCanSendFeedbackChange?.invoke(canSendFeedback)
+        // Enable feedback on agent reply (event id is handled elsewhere)
+        onCanSendFeedbackChange?.invoke(true)
 
         // If this is a voice conversation, ensure audio playback is active
         if (!audioManager.isPlaying()) {
@@ -95,36 +79,37 @@ class ConversationEventHandler(
             }
         }
 
-        Log.d("ConversationEventHandler", "Agent response: ${event.content}")
+        Log.d("ConversationEventHandler", "Agent response: ${event.agentResponse}")
     }
 
     /**
      * Handle user transcript events
      */
     private suspend fun handleUserTranscript(event: ConversationEvent.UserTranscript) {
-        // Only process final transcripts to avoid duplicate messages
-        if (event.isFinal) {
-            val message = Message(
-                id = event.eventId,
-                content = event.content,
-                role = MessageRole.USER,
-                timestamp = event.timestamp
-            )
-            addMessageToHistory(message)
-
-        Log.d("ConversationEventHandler", "User transcript: ${event.content}")
-        }
+        Log.d("ConversationEventHandler", "User transcript: ${event.userTranscript}")
     }
 
-    /**
-     * Handle interruption events
-     */
+    private fun handleAgentResponseCorrection(event: ConversationEvent.AgentResponseCorrection) {
+        Log.d("ConversationEventHandler", "Agent response correction: original='${event.originalAgentResponse}' corrected='${event.correctedAgentResponse}'")
+    }
+
+    private fun handleAgentToolResponse(event: ConversationEvent.AgentToolResponse) {
+        Log.d("ConversationEventHandler", "Agent tool response: name=${event.toolName}, id=${event.toolCallId}, type=${event.toolType}, isError=${event.isError}")
+    }
+
+    private fun handleAudio(event: ConversationEvent.Audio) {
+        Log.d("ConversationEventHandler", "Audio event: id=${event.eventId}, bytes=${event.audioBase64.length}")
+    }
+
+    private fun handleConversationInitiationMetadata(event: ConversationEvent.ConversationInitiationMetadata) {
+        Log.d("ConversationEventHandler", "Conversation init: id=${event.conversationId}, agentOut=${event.agentOutputAudioFormat}, userIn=${event.userInputAudioFormat}")
+    }
+
     private fun handleInterruption(event: ConversationEvent.Interruption) {
-        // User interrupted agent speech - switch to listening mode
+        // Switch to listening when agent is interrupted; disable feedback availability
         _conversationMode.value = ConversationMode.LISTENING
         onCanSendFeedbackChange?.invoke(false)
-
-        Log.d("ConversationEventHandler", "Conversation interrupted: ${event.eventId}")
+        Log.d("ConversationEventHandler", "Interruption: eventId=${event.eventId}")
     }
 
     /**
@@ -167,14 +152,6 @@ class ConversationEventHandler(
     }
 
     /**
-     * Handle mode change events
-     */
-    private fun handleModeChange(event: ConversationEvent.ModeChange) {
-        _conversationMode.value = event.mode
-        Log.d("ConversationEventHandler", "Conversation mode changed to: ${event.mode}")
-    }
-
-    /**
      * Handle ping events
      */
     private fun handlePing(event: ConversationEvent.Ping) {
@@ -201,49 +178,6 @@ class ConversationEventHandler(
         }
 
         // TODO call onVadScore
-    }
-
-    /**
-     * Handle connection state change events
-     */
-    private fun handleConnectionStateChange(event: ConversationEvent.ConnectionStateChange) {
-        // Handle specific connection states
-        when (event.status) {
-            ConversationStatus.CONNECTED -> {
-                // Connection established - can start audio if needed
-            }
-            ConversationStatus.DISCONNECTED -> {
-                // Connection lost - stop audio and reset state
-                scope.launch {
-                    try {
-                        audioManager.stopRecording()
-                        audioManager.stopPlayback()
-                    } catch (e: Exception) {
-            Log.d("ConversationEventHandler", "Error stopping audio on disconnect: ${e.message}")
-                    }
-                }
-                _conversationMode.value = ConversationMode.LISTENING
-                onCanSendFeedbackChange?.invoke(false)
-            }
-            ConversationStatus.ERROR -> {
-                // Connection error - handle gracefully
-                // TODO call onConnectionError
-                Log.d("ConversationEventHandler", "Connection error occurred")
-            }
-            else -> {
-                // Other states (connecting, etc.)
-            }
-        }
-    }
-
-    /**
-     * Handle error events
-     */
-    private fun handleError(event: ConversationEvent.Error) {
-        Log.d("ConversationEventHandler", "Conversation error: ${event.error}")
-
-        // Could implement specific error recovery logic here
-        // For example, retry on certain error codes, reset state, etc.
     }
 
     /**
@@ -303,22 +237,16 @@ class ConversationEventHandler(
     }
 
     /**
-     * Add a message to the conversation history
+     * Notify agent of user activity (e.g., typing)
      */
-    private fun addMessageToHistory(message: Message) {
-        val currentMessages = _messages.value.toMutableList()
-        currentMessages.add(message)
-        _messages.value = currentMessages
-    }
-
-    /**
-     * Clear conversation history
-     */
-    fun clearMessageHistory() {
-        _messages.value = emptyList()
-        _lastAgentEventId = null
-        _lastFeedbackSentForEventIdInt = null
-        Log.d("ConversationEventHandler", "Conversation history cleared")
+    fun sendUserActivity() {
+        try {
+            val event = OutgoingEvent.UserActivity()
+            messageCallback(event)
+            Log.d("ConversationEventHandler", "Sent user activity")
+        } catch (e: Exception) {
+            Log.d("ConversationEventHandler", "Failed to send user activity: ${e.message}")
+        }
     }
 
     /**
@@ -326,16 +254,14 @@ class ConversationEventHandler(
      */
     fun getCurrentMode(): ConversationMode = _conversationMode.value
 
-    /**
-     * Get the current message list
-     */
-    fun getCurrentMessages(): List<Message> = _messages.value
+    // No message list getter; UI should use server transcripts
 
     /**
      * Clean up resources
      */
     fun cleanup() {
         scope.cancel()
-        clearMessageHistory()
+        _lastAgentEventId = null
+        _lastFeedbackSentForEventIdInt = null
     }
 }

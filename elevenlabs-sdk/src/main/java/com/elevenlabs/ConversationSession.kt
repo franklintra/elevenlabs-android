@@ -4,7 +4,6 @@ import androidx.lifecycle.LiveData
 import com.elevenlabs.models.ConversationEvent
 import com.elevenlabs.models.ConversationMode
 import com.elevenlabs.models.ConversationStatus
-import com.elevenlabs.models.Message
 
 /**
  * Represents an active conversation session with an ElevenLabs agent
@@ -29,10 +28,7 @@ interface ConversationSession {
      */
     val mode: LiveData<ConversationMode>
 
-    /**
-     * List of all messages in the conversation
-     */
-    val messages: LiveData<List<Message>>
+    // Message history is intentionally not tracked; rely on server transcripts
 
     /**
      * Whether the microphone is currently muted
@@ -74,6 +70,17 @@ interface ConversationSession {
      */
     fun sendContextualUpdate(update: String)
 
+    /**
+     * Get the current conversation ID (e.g., conv_...)
+     * Returns null until the session is connected and the ID is known.
+     */
+    fun getId(): String?
+
+    /**
+     * Notify the agent that the user is actively typing
+     */
+    fun sendUserActivity()
+
     // Audio Control Methods
 
     /**
@@ -86,7 +93,7 @@ interface ConversationSession {
      *
      * @param muted true to mute, false to unmute
      */
-    suspend fun setMuted(muted: Boolean)
+    suspend fun setMicMuted(muted: Boolean)
 
     // Tool Integration
 

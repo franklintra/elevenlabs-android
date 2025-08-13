@@ -9,7 +9,6 @@ import com.elevenlabs.audio.AudioManager
 import com.elevenlabs.audio.LiveKitAudioManager
 import com.elevenlabs.models.ConversationMode
 import com.elevenlabs.models.ConversationStatus
-import com.elevenlabs.models.Message
 import com.elevenlabs.network.BaseConnection
 import com.elevenlabs.network.ConversationEventParser
 import com.elevenlabs.network.WebRTCConnection
@@ -32,6 +31,7 @@ internal class ConversationSessionImpl(
 ) : ConversationSession {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    @Volatile private var conversationId: String? = null
 
     // Event handler for processing conversation events
     private val eventHandler = ConversationEventHandler(
@@ -55,7 +55,6 @@ internal class ConversationSessionImpl(
     // Public observable properties using StateFlow -> LiveData conversion
     override val status: LiveData<ConversationStatus> = _status
     override val mode: LiveData<ConversationMode> = eventHandler.conversationMode.asLiveData()
-    override val messages: LiveData<List<Message>> = eventHandler.messages.asLiveData()
     override val isMuted: LiveData<Boolean> =
         if (audioManager is LiveKitAudioManager) {
             audioManager.muteState.asLiveData()
@@ -91,7 +90,16 @@ internal class ConversationSessionImpl(
             val serverUrl = "wss://livekit.rtc.elevenlabs.io" // Default URL, can be configured
             val token = config.conversationToken ?: ""
             Log.d("ConversationSession", "Starting connection to $serverUrl")
-            connection.connect(token, serverUrl, config)
+            // Wrap onConnect to capture conversationId while preserving user's callback
+            val originalOnConnect = config.onConnect
+            val wrappedConfig = config.copy(
+                onConnect = { id ->
+                    conversationId = id
+                    try { originalOnConnect?.invoke(id) } catch (_: Throwable) {}
+                }
+            )
+
+            connection.connect(token, serverUrl, wrappedConfig)
 
             // Ensure audio starts only after room is connected (addresses LK permission ordering)
             if (!config.textOnly) {
@@ -126,6 +134,7 @@ internal class ConversationSessionImpl(
             audioManager.cleanup()
 
             _status.value = ConversationStatus.DISCONNECTED
+            conversationId = null
 
         } catch (e: Exception) {
             _status.value = ConversationStatus.ERROR
@@ -147,13 +156,19 @@ internal class ConversationSessionImpl(
         eventHandler.sendContextualUpdate(update)
     }
 
-    override suspend fun toggleMute() {
-        val currentMuted = audioManager.isMuted()
-        audioManager.setMuted(!currentMuted)
+    override fun sendUserActivity() {
+        eventHandler.sendUserActivity()
     }
 
-    override suspend fun setMuted(muted: Boolean) {
-        audioManager.setMuted(muted)
+    override fun getId(): String? = conversationId
+
+    override suspend fun toggleMute() {
+        val currentMuted = audioManager.isMuted()
+        audioManager.setMicMuted(!currentMuted)
+    }
+
+    override suspend fun setMicMuted(muted: Boolean) {
+        audioManager.setMicMuted(muted)
     }
 
     override fun registerTool(name: String, tool: ClientTool) {

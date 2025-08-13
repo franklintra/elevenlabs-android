@@ -48,6 +48,10 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
     private val _canSendFeedback = MutableLiveData<Boolean>(false)
     val canSendFeedback: LiveData<Boolean> = _canSendFeedback
 
+    // Mute state exposed to UI
+    private val _isMuted = MutableLiveData<Boolean>(false)
+    val isMuted: LiveData<Boolean> = _isMuted
+
     fun startConversation(activityContext: Context) {
         if (currentSession != null && _uiState.value != UiState.Idle && _uiState.value !is UiState.Error) {
             Log.d("ConversationViewModel", "Session already active or connecting.")
@@ -120,6 +124,11 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                     }
                 }
 
+                // Observe mute state if available
+                session.isMuted.observeForever { muted ->
+                    _isMuted.value = muted
+                }
+
                 // Start the session
                 session.start()
                 Log.d("ConversationViewModel", "Session started successfully")
@@ -170,6 +179,40 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
     fun sendFeedback(isPositive: Boolean) {
         currentSession?.sendFeedback(isPositive)
         Log.d("ConversationViewModel", "Sent ${if (isPositive) "positive" else "negative"} feedback")
+    }
+
+    fun sendContextualUpdate(text: String) {
+        try {
+            currentSession?.sendContextualUpdate(text)
+        } catch (t: Throwable) {
+            Log.d("ConversationViewModel", "Failed to send contextual update: ${t.message}")
+        }
+    }
+
+    fun sendUserMessage(text: String) {
+        try {
+            currentSession?.sendMessage(text)
+        } catch (t: Throwable) {
+            Log.d("ConversationViewModel", "Failed to send user message: ${t.message}")
+        }
+    }
+
+    fun sendUserActivity() {
+        try {
+            currentSession?.sendUserActivity()
+        } catch (t: Throwable) {
+            Log.d("ConversationViewModel", "Failed to send user activity: ${t.message}")
+        }
+    }
+
+    fun toggleMute() {
+        viewModelScope.launch {
+            try {
+                currentSession?.toggleMute()
+            } catch (t: Throwable) {
+                Log.d("ConversationViewModel", "Failed to toggle mute: ${t.message}")
+            }
+        }
     }
 
     override fun onCleared() {

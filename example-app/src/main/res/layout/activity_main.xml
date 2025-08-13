@@ -76,6 +76,57 @@
         android:clickable="true"
         android:focusable="true" />
 
+    <!-- Contextual update input -->
+    <EditText
+        android:id="@+id/contextualEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Type message..."
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:inputType="text"
+        android:textColor="@color/on_background"
+        android:textColorHint="@color/on_surface"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/contextualButtonsRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="10dp"
+        android:visibility="gone">
+        <Button
+            android:id="@+id/contextualSendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send contextual message"
+            android:textAllCaps="false"
+            android:textSize="14sp"
+            android:backgroundTint="@color/primary_button_tint"
+            android:textColor="@color/primary_button_text"
+            android:layout_marginEnd="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:enabled="false" />
+
+        <Button
+            android:id="@+id/userSendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send user message"
+            android:textAllCaps="false"
+            android:textSize="14sp"
+            android:backgroundTint="@color/primary_button_tint"
+            android:textColor="@color/primary_button_text"
+            android:clickable="true"
+            android:focusable="true"
+            android:enabled="false" />
+
+    </LinearLayout>
+
     <!-- Feedback Buttons -->
     <LinearLayout
         android:id="@+id/feedbackContainer"
@@ -116,6 +167,31 @@
             android:enabled="false"
             android:clickable="true"
             android:focusable="true" />
+
+    </LinearLayout>
+
+    <!-- Mute control below feedback -->
+    <LinearLayout
+        android:id="@+id/muteContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="12dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/muteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mute"
+            android:textAllCaps="false"
+            android:textSize="14sp"
+            android:backgroundTint="@color/primary_button_tint"
+            android:textColor="@color/primary_button_text"
+            android:clickable="true"
+            android:focusable="true"
+            android:enabled="false" />
 
     </LinearLayout>
 

@@ -32,20 +32,16 @@ object ConversationEventParser {
             val eventType = getEventType(jsonObject)
 
             when (eventType) {
+                "conversation_initiation_metadata" -> parseConversationInitiationMetadata(jsonObject)
+                "audio" -> parseAudio(jsonObject)
                 "agent_response" -> parseAgentResponse(jsonObject)
+                "agent_response_correction" -> parseAgentResponseCorrection(jsonObject)
                 "user_transcript" -> parseUserTranscript(jsonObject)
-                "interruption" -> parseInterruption(jsonObject)
                 "client_tool_call" -> parseClientToolCall(jsonObject)
-                "mode_change" -> parseModeChange(jsonObject)
+                "agent_tool_response" -> parseAgentToolResponse(jsonObject)
                 "vad_score" -> parseVadScore(jsonObject)
-                "connection_state_change" -> parseConnectionStateChange(jsonObject)
-                "error" -> parseError(jsonObject)
+                "interruption" -> parseInterruption(jsonObject)
                 "ping" -> parsePing(jsonObject)
-                "agent_tool_response" -> {
-                    // Ignore quietly; this is the server acknowledging a tool result
-                    logAgentToolResponse(jsonObject)
-                    null
-                }
                 else -> {
                     handleParsingError(json, IllegalArgumentException("Unknown event type: $eventType"))
                     null
@@ -86,57 +82,12 @@ object ConversationEventParser {
     }
 
     /**
-     * Parse event ID from JSON, converting string to int if needed
-     */
-    private fun parseEventId(obj: JsonObject): Int {
-        val eventIdElement = obj.get("event_id")
-        return when {
-            eventIdElement == null || eventIdElement.isJsonNull -> {
-                // Generate fallback ID
-                (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-            }
-            eventIdElement.isJsonPrimitive && eventIdElement.asJsonPrimitive.isNumber -> {
-                eventIdElement.asInt
-            }
-            eventIdElement.isJsonPrimitive && eventIdElement.asJsonPrimitive.isString -> {
-                val stringId = eventIdElement.asString
-                // Try to extract integer from string formats like "evt_123_456" or "123"
-                stringId.toIntOrNull()
-                    ?: stringId.split("_").lastOrNull()?.toIntOrNull()
-                    ?: stringId.split("_").firstOrNull()?.toIntOrNull()
-                    ?: (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-            }
-            else -> {
-                (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-            }
-        }
-    }
-
-    /**
      * Parse agent response event
      */
     private fun parseAgentResponse(jsonObject: JsonObject): ConversationEvent.AgentResponse {
         val obj = jsonObject.getAsJsonObject("agent_response_event")
-            ?: jsonObject.getAsJsonObject("agent_response")
-            ?: jsonObject
-
-        val content = when {
-            obj.get("agent_response") != null && !obj.get("agent_response").isJsonNull -> obj.get("agent_response").asString
-            obj.get("content") != null && !obj.get("content").isJsonNull -> obj.get("content").asString
-            obj.get("text") != null && !obj.get("text").isJsonNull -> obj.get("text").asString
-            obj.get("message") != null && !obj.get("message").isJsonNull -> obj.get("message").asString
-            else -> ""
-        }
-
-        val eventId = parseEventId(obj)
-
-        val timestamp = obj.get("timestamp")?.asLong ?: System.currentTimeMillis()
-
-        return ConversationEvent.AgentResponse(
-            content = content,
-            eventId = eventId,
-            timestamp = timestamp
-        )
+        val content = obj?.get("agent_response")?.asString ?: ""
+        return ConversationEvent.AgentResponse(agentResponse = content)
     }
 
     /**
@@ -144,43 +95,8 @@ object ConversationEventParser {
      */
     private fun parseUserTranscript(jsonObject: JsonObject): ConversationEvent.UserTranscript {
         val obj = jsonObject.getAsJsonObject("user_transcription_event")
-            ?: jsonObject.getAsJsonObject("user_transcript")
-            ?: jsonObject
-
-        val content = when {
-            obj.get("user_transcript") != null && !obj.get("user_transcript").isJsonNull -> obj.get("user_transcript").asString
-            obj.get("content") != null && !obj.get("content").isJsonNull -> obj.get("content").asString
-            obj.get("text") != null && !obj.get("text").isJsonNull -> obj.get("text").asString
-            obj.get("transcript") != null && !obj.get("transcript").isJsonNull -> obj.get("transcript").asString
-            else -> ""
-        }
-
-        val eventId = parseEventId(obj)
-
-        val timestamp = obj.get("timestamp")?.asLong ?: System.currentTimeMillis()
-
-        val isFinal = when {
-            obj.get("is_final") != null && !obj.get("is_final").isJsonNull -> obj.get("is_final").asBoolean
-            obj.get("final") != null && !obj.get("final").isJsonNull -> obj.get("final").asBoolean
-            else -> true
-        }
-
-        return ConversationEvent.UserTranscript(
-            content = content,
-            eventId = eventId,
-            timestamp = timestamp,
-            isFinal = isFinal
-        )
-    }
-
-    /**
-     * Parse interruption event
-     */
-    private fun parseInterruption(jsonObject: JsonObject): ConversationEvent.Interruption {
-        return ConversationEvent.Interruption(
-            eventId = parseEventId(jsonObject),
-            timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
-        )
+        val content = obj?.get("user_transcript")?.asString ?: ""
+        return ConversationEvent.UserTranscript(userTranscript = content)
     }
 
     /**
@@ -215,7 +131,40 @@ object ConversationEventParser {
             parameters = parameters,
             toolCallId = obj.get("tool_call_id")?.asString ?: "",
             expectsResponse = obj.get("expects_response")?.asBoolean ?: true,
-            timestamp = obj.get("timestamp")?.asLong ?: System.currentTimeMillis()
+        )
+    }
+
+    private fun parseAgentResponseCorrection(jsonObject: JsonObject): ConversationEvent.AgentResponseCorrection {
+        val obj = jsonObject.getAsJsonObject("agent_response_correction_event") ?: jsonObject
+        val original = obj.get("original_agent_response")?.asString ?: ""
+        val corrected = obj.get("corrected_agent_response")?.asString ?: ""
+        return ConversationEvent.AgentResponseCorrection(originalAgentResponse = original, correctedAgentResponse = corrected)
+    }
+
+    private fun parseAgentToolResponse(jsonObject: JsonObject): ConversationEvent.AgentToolResponse {
+        val obj = jsonObject.getAsJsonObject("agent_tool_response") ?: jsonObject
+        return ConversationEvent.AgentToolResponse(
+            toolName = obj.get("tool_name")?.asString ?: "",
+            toolCallId = obj.get("tool_call_id")?.asString ?: "",
+            toolType = obj.get("tool_type")?.asString ?: "",
+            isError = obj.get("is_error")?.asBoolean ?: false
+        )
+    }
+
+    private fun parseAudio(jsonObject: JsonObject): ConversationEvent.Audio {
+        val obj = jsonObject.getAsJsonObject("audio_event") ?: jsonObject
+        return ConversationEvent.Audio(
+            eventId = obj.get("event_id")?.asInt ?: 0,
+            audioBase64 = obj.get("audio_base64")?.asString ?: ""
+        )
+    }
+
+    private fun parseConversationInitiationMetadata(jsonObject: JsonObject): ConversationEvent.ConversationInitiationMetadata {
+        val obj = jsonObject.getAsJsonObject("conversation_initiation_metadata") ?: jsonObject
+        return ConversationEvent.ConversationInitiationMetadata(
+            conversationId = obj.get("conversation_id")?.asString ?: "",
+            agentOutputAudioFormat = obj.get("agent_output_audio_format")?.asString ?: "",
+            userInputAudioFormat = obj.get("user_input_audio_format")?.asString ?: ""
         )
     }
 
@@ -223,23 +172,6 @@ object ConversationEventParser {
         try {
             Log.d("ConversationEventParser", "Agent tool response: ${jsonObject}")
         } catch (_: Exception) { }
-    }
-
-    /**
-     * Parse mode change event
-     */
-    private fun parseModeChange(jsonObject: JsonObject): ConversationEvent.ModeChange {
-        val modeString = jsonObject.get("mode")?.asString ?: "listening"
-        val mode = when (modeString.lowercase()) {
-            "speaking" -> ConversationMode.SPEAKING
-            "listening" -> ConversationMode.LISTENING
-            else -> ConversationMode.LISTENING
-        }
-
-        return ConversationEvent.ModeChange(
-            mode = mode,
-            timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
-        )
     }
 
     /**
@@ -252,35 +184,10 @@ object ConversationEventParser {
         )
     }
 
-    /**
-     * Parse connection state change event
-     */
-    private fun parseConnectionStateChange(jsonObject: JsonObject): ConversationEvent.ConnectionStateChange {
-        val statusString = jsonObject.get("status")?.asString ?: "disconnected"
-        val status = when (statusString.lowercase()) {
-            "connected" -> ConversationStatus.CONNECTED
-            "connecting" -> ConversationStatus.CONNECTING
-            "disconnecting" -> ConversationStatus.DISCONNECTING
-            "error" -> ConversationStatus.ERROR
-            else -> ConversationStatus.DISCONNECTED
-        }
-
-        return ConversationEvent.ConnectionStateChange(
-            status = status,
-            reason = jsonObject.get("reason")?.asString,
-            timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
-        )
-    }
-
-    /**
-     * Parse error event
-     */
-    private fun parseError(jsonObject: JsonObject): ConversationEvent.Error {
-        return ConversationEvent.Error(
-            error = jsonObject.get("error")?.asString ?: "Unknown error",
-            code = jsonObject.get("code")?.asString,
-            timestamp = jsonObject.get("timestamp")?.asLong ?: System.currentTimeMillis()
-        )
+    private fun parseInterruption(jsonObject: JsonObject): ConversationEvent.Interruption {
+        val obj = jsonObject.getAsJsonObject("interruption_event")
+        val id = obj?.get("event_id")?.asInt ?: 0
+        return ConversationEvent.Interruption(eventId = id)
     }
 
     /**
