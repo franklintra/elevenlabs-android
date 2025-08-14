@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id("maven-publish")
+    id("signing")
 }
 
 group = "io.elevenlabs"
@@ -91,7 +93,7 @@ publishing {
                 licenses {
                     license {
                         name.set("MIT License")
-                        url.set("https://github.com/elevenlabs/elevenlabs-android/blog/main/LICENSE")
+                        url.set("https://github.com/elevenlabs/elevenlabs-android/blob/main/LICENSE")
                     }
                 }
 
@@ -122,4 +124,18 @@ publishing {
             }
         }
     }
+}
+
+signing {
+    useInMemoryPgpKeys(
+        System.getenv("SIGNING_KEY_ID"),
+        System.getenv("SIGNING_SECRET_KEY_RING_FILE"),
+        System.getenv("SIGNING_PASSWORD")
+    )
+    sign(publishing.publications["release"])
+}
+
+// Ensure signing happens after publication is configured
+tasks.withType<Sign>().configureEach {
+    onlyIf { gradle.taskGraph.hasTask("publish") }
 }
