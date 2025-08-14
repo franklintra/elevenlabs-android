@@ -46,7 +46,6 @@ jobs:
     - name: Generate documentation
       run: ./gradlew elevenlabs-sdk:dokkaHtml
 
-    # TODO: Add actual publishing steps in future milestones
     # - name: Publish to Maven Central
     #   run: ./gradlew elevenlabs-sdk:publishToMavenCentral
     #   env:

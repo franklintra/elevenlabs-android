@@ -71,3 +71,55 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "io.elevenlabs"
+            artifactId = "elevenlabs-android"
+            version = project.version.toString()
+
+            afterEvaluate {
+                from(components["release"])
+            }
+
+            pom {
+                name.set("ElevenLabs Android SDK")
+                description.set("Android SDK for ElevenLabs Conversational AI")
+                url.set("https://github.com/elevenlabs/elevenlabs-android")
+
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://github.com/elevenlabs/elevenlabs-android/blog/main/LICENSE")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("PaulAsjes")
+                        name.set("Paul Asjes")
+                        email.set("paul.asjes@elevenlabs.io")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/elevenlabs/elevenlabs-android.git")
+                    developerConnection.set("scm:git:ssh://github.com:elevenlabs/elevenlabs-android.git")
+                    url.set("https://github.com/elevenlabs/elevenlabs-android/tree/main")
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = System.getenv("OSSRH_USERNAME")
+                password = System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}

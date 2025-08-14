@@ -64,7 +64,7 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             try {
                 val config = io.elevenlabs.ConversationConfig(
-                    agentId = "J3Pbu5gP6NNKBscdCdwA",
+                    agentId = "J3Pbu5gP6NNKBscdCdwA", // Replace with your agent ID
                     conversationToken = null,
                     userId = "demo-user",
                     textOnly = false,
