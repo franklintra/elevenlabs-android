@@ -3,12 +3,6 @@ name: Publish SDK
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version'
-        required: true
-        default: '1.0.0'
 
 jobs:
   publish:
