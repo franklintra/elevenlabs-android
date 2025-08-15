@@ -37,9 +37,6 @@ jobs:
     - name: Run tests
       run: ./gradlew elevenlabs-sdk:test
 
-    - name: Generate documentation
-      run: ./gradlew elevenlabs-sdk:dokkaHtml
-
     - name: Publish to Maven Central
       run: ./gradlew elevenlabs-sdk:publishToMavenCentral
       env:
