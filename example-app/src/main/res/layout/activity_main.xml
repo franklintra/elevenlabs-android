@@ -93,15 +93,17 @@
 
     <LinearLayout
         android:id="@+id/contextualButtonsRow"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_marginBottom="10dp"
         android:visibility="gone">
         <Button
             android:id="@+id/contextualSendButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
             android:text="Send contextual message"
             android:textAllCaps="false"
             android:textSize="14sp"
@@ -114,8 +116,9 @@
 
         <Button
             android:id="@+id/userSendButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
             android:text="Send user message"
             android:textAllCaps="false"
             android:textSize="14sp"
