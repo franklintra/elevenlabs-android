@@ -1,12 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("maven-publish")
-    id("signing")
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
 group = "io.elevenlabs"
-version = "0.1.0"
+version = "0.1.0-SNAPSHOT"
 
 android {
 namespace = "io.elevenlabs"
@@ -74,68 +73,44 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("release") {
-            groupId = "io.elevenlabs"
-            artifactId = "elevenlabs-android"
-            version = project.version.toString()
+mavenPublishing {
+    // Enable publishing to Maven Central
+    publishToMavenCentral(automaticRelease = true)
 
-            afterEvaluate {
-                from(components["release"])
-            }
+    // Enable GPG signing (required for Maven Central)
+    signAllPublications()
 
-            pom {
-                name.set("ElevenLabs Android SDK")
-                description.set("Android SDK for ElevenLabs Conversational AI")
-                url.set("https://github.com/elevenlabs/elevenlabs-android")
+    // Configure coordinates (group:artifactId:version)
+    coordinates("io.elevenlabs", "elevenlabs-android", project.version.toString())
 
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://github.com/elevenlabs/elevenlabs-android/blob/main/LICENSE")
-                    }
-                }
+    // Configure POM metadata
+    pom {
+        name.set("ElevenLabs Android SDK")
+        description.set("Android SDK for ElevenLabs Conversational AI")
+        inceptionYear.set("2025")
+        url.set("https://github.com/elevenlabs/elevenlabs-android")
 
-                developers {
-                    developer {
-                        id.set("PaulAsjes")
-                        name.set("Paul Asjes")
-                        email.set("paul.asjes@elevenlabs.io")
-                    }
-                }
-
-                scm {
-                    connection.set("scm:git:git://github.com/elevenlabs/elevenlabs-android.git")
-                    developerConnection.set("scm:git:ssh://github.com:elevenlabs/elevenlabs-android.git")
-                    url.set("https://github.com/elevenlabs/elevenlabs-android/tree/main")
-                }
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://github.com/elevenlabs/elevenlabs-android/blob/main/LICENSE")
+                distribution.set("https://github.com/elevenlabs/elevenlabs-android/blob/main/LICENSE")
             }
         }
-    }
 
-    repositories {
-        maven {
-            name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_PASSWORD")
+        developers {
+            developer {
+                id.set("PaulAsjes")
+                name.set("Paul Asjes")
+                email.set("paul.asjes@elevenlabs.io")
+                url.set("https://github.com/PaulAsjes")
             }
         }
+
+        scm {
+            url.set("https://github.com/elevenlabs/elevenlabs-android")
+            connection.set("scm:git:git://github.com/elevenlabs/elevenlabs-android.git")
+            developerConnection.set("scm:git:ssh://git@github.com/elevenlabs/elevenlabs-android.git")
+        }
     }
-}
-
-signing {
-    useInMemoryPgpKeys(
-        System.getenv("SIGNING_KEY_ID"),
-        System.getenv("SIGNING_SECRET_KEY_RING_FILE"),
-        System.getenv("SIGNING_PASSWORD")
-    )
-    sign(publishing.publications["release"])
-}
-
-// Ensure signing happens after publication is configured
-tasks.withType<Sign>().configureEach {
-    onlyIf { gradle.taskGraph.hasTask("publish") }
 }
