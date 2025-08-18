@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.elevenlabs"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 android {
 namespace = "io.elevenlabs"
@@ -74,8 +74,8 @@ dependencies {
 }
 
 mavenPublishing {
-    // Enable publishing to Maven Central using legacy OSSRH for snapshots
-    publishToMavenCentral(automaticRelease = true, S01 = false)
+    // Enable publishing to Maven Central
+    publishToMavenCentral(automaticRelease = true)
 
     // Enable GPG signing (required for Maven Central)
     signAllPublications()
