@@ -74,8 +74,8 @@ dependencies {
 }
 
 mavenPublishing {
-    // Enable publishing to Maven Central
-    publishToMavenCentral(automaticRelease = true)
+    // Enable publishing to Maven Central using legacy OSSRH for snapshots
+    publishToMavenCentral(automaticRelease = true, S01 = false)
 
     // Enable GPG signing (required for Maven Central)
     signAllPublications()
