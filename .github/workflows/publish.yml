@@ -37,11 +37,8 @@ jobs:
     - name: Run tests
       run: ./gradlew elevenlabs-sdk:test
 
-    - name: List available publishing tasks
-      run: ./gradlew elevenlabs-sdk:tasks --group=publishing --info
-
     - name: Publish to Maven Central
-      run: ./gradlew elevenlabs-sdk:publishToMavenCentral --info --stacktrace
+      run: ./gradlew elevenlabs-sdk:publishToMavenCentral
       env:
         ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
         ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
