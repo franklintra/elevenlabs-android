@@ -37,8 +37,41 @@ jobs:
     - name: Run tests
       run: ./gradlew elevenlabs-sdk:test
 
+    - name: Verify credentials are set
+      run: |
+        echo "Checking if credentials are available..."
+        if [ -z "$ORG_GRADLE_PROJECT_mavenCentralUsername" ]; then
+          echo "❌ Maven Central Username is not set"
+          exit 1
+        else
+          echo "✅ Maven Central Username is set (length: ${#ORG_GRADLE_PROJECT_mavenCentralUsername})"
+        fi
+
+        if [ -z "$ORG_GRADLE_PROJECT_mavenCentralPassword" ]; then
+          echo "❌ Maven Central Password is not set"
+          exit 1
+        else
+          echo "✅ Maven Central Password is set (length: ${#ORG_GRADLE_PROJECT_mavenCentralPassword})"
+        fi
+
+        if [ -z "$ORG_GRADLE_PROJECT_signingInMemoryKey" ]; then
+          echo "❌ Signing key is not set"
+          exit 1
+        else
+          echo "✅ Signing key is set (length: ${#ORG_GRADLE_PROJECT_signingInMemoryKey})"
+        fi
+      env:
+        ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+        ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+        ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+        ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+
+    - name: List available publishing tasks
+      run: ./gradlew elevenlabs-sdk:tasks --group=publishing --info
+
     - name: Publish to Maven Central
-      run: ./gradlew elevenlabs-sdk:publishToMavenCentral
+      run: ./gradlew elevenlabs-sdk:publishToMavenCentral --info --stacktrace
       env:
         ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
         ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
