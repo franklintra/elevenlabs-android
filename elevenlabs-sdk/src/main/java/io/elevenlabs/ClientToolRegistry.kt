@@ -1,6 +1,7 @@
 package io.elevenlabs
 
 import android.util.Log
+import com.google.gson.Gson
 import kotlinx.coroutines.*
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -198,15 +199,18 @@ class ClientToolRegistryBuilder {
      * Add a simple function-based tool
      *
      * @param name Tool identifier
-     * @param function Function to execute
+     * @param function Function to execute. Return value will be JSON-encoded if non-null.
      * @return This builder for chaining
      */
-    fun addTool(name: String, function: suspend (Map<String, Any>) -> String?): ClientToolRegistryBuilder {
+    fun addTool(name: String, function: suspend (Map<String, Any>) -> Any?): ClientToolRegistryBuilder {
         registry.registerTool(name, object : ClientTool {
             override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 return try {
                     val result = function(parameters)
-                    result?.let { ClientToolResult.success(it) }
+                    result?.let {
+                        val payload = Gson().toJson(it)
+                        ClientToolResult.success(payload)
+                    }
                 } catch (e: Exception) {
                     ClientToolResult.failure("Function execution failed: ${e.message}")
                 }
