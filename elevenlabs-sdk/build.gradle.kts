@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     id("com.vanniktech.maven.publish") version "0.34.0"
+    `maven-publish`
 }
 
 group = "io.elevenlabs"
@@ -111,6 +112,18 @@ mavenPublishing {
             url.set("https://github.com/elevenlabs/elevenlabs-android")
             connection.set("scm:git:git://github.com/elevenlabs/elevenlabs-android.git")
             developerConnection.set("scm:git:ssh://git@github.com/elevenlabs/elevenlabs-android.git")
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.github.franklintra"
+            artifactId = "elevenlabs-sdk"
+            version = "1.0"
+
+            from(components["release"])
         }
     }
 }
