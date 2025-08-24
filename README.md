@@ -170,7 +170,7 @@ val config = ConversationConfig(
             override suspend fun execute(parameters: Map<String, Any>): io.elevenlabs.ClientToolResult? {
                 val message = parameters["message"] as? String ?: return io.elevenlabs.ClientToolResult.failure("Missing 'message'")
                 android.util.Log.d("ClientTool", "Log: $message")
-                return io.elevenlabs.ClientToolResult.success("ok")
+                return io.elevenlabs.ClientToolResult.noResponse()
             }
         }
     )

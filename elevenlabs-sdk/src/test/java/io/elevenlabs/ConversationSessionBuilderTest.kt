@@ -72,7 +72,7 @@ class ConversationSessionBuilderTest {
     @Test
     fun `addTool with function returns builder for chaining`() {
         val builder = ConversationSessionBuilder(mockContext)
-        val mockFunction: suspend (Map<String, Any>) -> String = mockk()
+        val mockFunction: suspend (Map<String, Any>) -> Any? = mockk()
 
         val result = builder.addTool("testTool", mockFunction)
 
@@ -106,7 +106,7 @@ class ConversationSessionBuilderTest {
     @Test
     fun `build registers function-based tool`() = runTest {
         val config = ConversationConfig(conversationToken = "test-token")
-        val testFunction: suspend (Map<String, Any>) -> String = { params ->
+        val testFunction: suspend (Map<String, Any>) -> Any? = { params ->
             "result: ${params["input"]}"
         }
 
@@ -131,7 +131,7 @@ class ConversationSessionBuilderTest {
         }
 
         val config = ConversationConfig(conversationToken = "test-token")
-        val testFunction: suspend (Map<String, Any>) -> String = { params ->
+        val testFunction: suspend (Map<String, Any>) -> Any? = { params ->
             "result: ${params["input"]}"
         }
 
@@ -143,9 +143,9 @@ class ConversationSessionBuilderTest {
 
         // Test the captured tool
         assertNotNull(capturedTool)
-        val result = capturedTool!!.execute(mapOf("input" to "test"))
+        val result = capturedTool!!.execute(mapOf("input" to "test"))!!
         assertTrue(result.success)
-        assertEquals("result: test", result.result)
+        assertEquals("\"result: test\"", result.result)
     }
 
     @Test
@@ -157,7 +157,7 @@ class ConversationSessionBuilderTest {
         }
 
         val config = ConversationConfig(conversationToken = "test-token")
-        val testFunction: suspend (Map<String, Any>) -> String = { _ ->
+        val testFunction: suspend (Map<String, Any>) -> Any? = { _ ->
             throw RuntimeException("Test exception")
         }
 
@@ -169,7 +169,7 @@ class ConversationSessionBuilderTest {
 
         // Test the captured tool
         assertNotNull(capturedTool)
-        val result = capturedTool!!.execute(emptyMap())
+        val result = capturedTool!!.execute(emptyMap())!!
         assertFalse(result.success)
         assertEquals("Function execution failed: Test exception", result.error)
     }

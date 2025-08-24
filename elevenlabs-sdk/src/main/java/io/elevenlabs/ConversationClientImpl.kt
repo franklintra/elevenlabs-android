@@ -2,6 +2,7 @@ package io.elevenlabs
 
 import android.content.Context
 import android.util.Log
+import com.google.gson.Gson
 import io.elevenlabs.BuildConfig
 import io.elevenlabs.audio.AudioSessionManager
 import io.elevenlabs.audio.LiveKitAudioManager
@@ -145,13 +146,18 @@ class ConversationSessionBuilder(private val context: Context) {
 
     /**
      * Add a simple function-based tool
+     *
+     * @param function Function to execute. Return value will be JSON-encoded if non-null.
      */
-    fun addTool(name: String, function: suspend (Map<String, Any>) -> String?): ConversationSessionBuilder {
+    fun addTool(name: String, function: suspend (Map<String, Any>) -> Any?): ConversationSessionBuilder {
         customTools[name] = object : ClientTool {
             override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 return try {
                     val result = function(parameters)
-                    result?.let { ClientToolResult.success(it) }
+                    result?.let {
+                        val payload = Gson().toJson(it)
+                        ClientToolResult.success(payload)
+                    }
                 } catch (e: Exception) {
                     ClientToolResult.failure("Function execution failed: ${e.message}")
                 }
