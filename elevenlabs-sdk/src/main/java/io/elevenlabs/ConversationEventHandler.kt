@@ -124,7 +124,7 @@ class ConversationEventHandler(
                 try { onUnhandledClientToolCall?.invoke(event) } catch (_: Throwable) {}
             }
 
-            val result = try {
+            val result: ClientToolResult? = try {
                 if (!toolExists) {
                     ClientToolResult.failure("Tool '${event.toolName}' not registered on client")
                 } else {
@@ -134,8 +134,8 @@ class ConversationEventHandler(
                 ClientToolResult.failure("Tool execution failed: ${e.message}")
             }
 
-            // Send result back to agent if response is expected
-            if (event.expectsResponse) {
+            // Send result back to agent only if response is expected and a result is provided
+            if (event.expectsResponse && result != null) {
                 val toolResultEvent = OutgoingEvent.ClientToolResult(
                     toolCallId = event.toolCallId,
                     result = mapOf<String, Any>(
@@ -148,7 +148,12 @@ class ConversationEventHandler(
 
                 messageCallback(toolResultEvent)
             }
-            Log.d("ConvEventHandler", "Tool executed: ${event.toolName} -> ${if (result.success) "SUCCESS" else "FAILED"}")
+            val status = when {
+                result == null -> "NO_RESPONSE"
+                result.success -> "SUCCESS"
+                else -> "FAILED"
+            }
+            Log.d("ConvEventHandler", "Tool executed: ${event.toolName} -> $status")
         }
     }
 

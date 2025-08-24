@@ -104,7 +104,7 @@ val config = ConversationConfig(
     // List of client tools the agent can invoke
     clientTools = mapOf(
         "logMessage" to object : ClientTool {
-            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 val message = parameters["message"] as? String
 
                 Log.d("ExampleApp", "[INFO] Client Tool Log: $message")
@@ -113,6 +113,8 @@ val config = ConversationConfig(
         }
     ),
 )
+
+> **Note:** If a tool is configured with `expects_response=false` on the server, return `null` or `ClientToolResult.noResponse()` from `execute` to skip sending a tool result.
 
 // In an Activity context
 val session: ConversationSession = ConversationClient.startSession(config, this)
@@ -165,7 +167,7 @@ val config = ConversationConfig(
     agentId = "<public_agent>",
     clientTools = mapOf(
         "logMessage" to object : io.elevenlabs.ClientTool {
-            override suspend fun execute(parameters: Map<String, Any>): io.elevenlabs.ClientToolResult {
+            override suspend fun execute(parameters: Map<String, Any>): io.elevenlabs.ClientToolResult? {
                 val message = parameters["message"] as? String ?: return io.elevenlabs.ClientToolResult.failure("Missing 'message'")
                 android.util.Log.d("ClientTool", "Log: $message")
                 return io.elevenlabs.ClientToolResult.success("ok")

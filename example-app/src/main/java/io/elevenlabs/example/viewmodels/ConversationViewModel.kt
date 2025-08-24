@@ -73,7 +73,7 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
                     dynamicVariables = null,
                     clientTools = mapOf(
                         "logMessage" to object : io.elevenlabs.ClientTool {
-                            override suspend fun execute(parameters: Map<String, Any>): io.elevenlabs.ClientToolResult {
+                            override suspend fun execute(parameters: Map<String, Any>): io.elevenlabs.ClientToolResult? {
                                 val message = parameters["message"] as? String
                                     ?: return io.elevenlabs.ClientToolResult.failure("Missing 'message' parameter")
                                 val level = parameters["level"] as? String ?: "INFO"

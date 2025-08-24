@@ -146,12 +146,12 @@ class ConversationSessionBuilder(private val context: Context) {
     /**
      * Add a simple function-based tool
      */
-    fun addTool(name: String, function: suspend (Map<String, Any>) -> String): ConversationSessionBuilder {
+    fun addTool(name: String, function: suspend (Map<String, Any>) -> String?): ConversationSessionBuilder {
         customTools[name] = object : ClientTool {
-            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 return try {
                     val result = function(parameters)
-                    ClientToolResult.success(result)
+                    result?.let { ClientToolResult.success(it) }
                 } catch (e: Exception) {
                     ClientToolResult.failure("Function execution failed: ${e.message}")
                 }
