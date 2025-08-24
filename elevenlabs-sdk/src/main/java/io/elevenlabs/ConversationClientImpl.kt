@@ -148,7 +148,7 @@ class ConversationSessionBuilder(private val context: Context) {
      */
     fun addTool(name: String, function: suspend (Map<String, Any>) -> String): ConversationSessionBuilder {
         customTools[name] = object : ClientTool {
-            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 return try {
                     val result = function(parameters)
                     ClientToolResult.success(result)

@@ -144,7 +144,8 @@ class ConversationSessionBuilderTest {
         // Test the captured tool
         assertNotNull(capturedTool)
         val result = capturedTool!!.execute(mapOf("input" to "test"))
-        assertTrue(result.success)
+        assertNotNull(result)
+        assertTrue(result!!.success)
         assertEquals("result: test", result.result)
     }
 
@@ -170,7 +171,8 @@ class ConversationSessionBuilderTest {
         // Test the captured tool
         assertNotNull(capturedTool)
         val result = capturedTool!!.execute(emptyMap())
-        assertFalse(result.success)
+        assertNotNull(result)
+        assertFalse(result!!.success)
         assertEquals("Function execution failed: Test exception", result.error)
     }
 
