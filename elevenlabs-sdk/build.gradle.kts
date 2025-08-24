@@ -79,8 +79,10 @@ mavenPublishing {
     // Enable publishing to Maven Central
     publishToMavenCentral(automaticRelease = true)
 
-    // Enable GPG signing (required for Maven Central)
-    signAllPublications()
+    // Only enable GPG signing when signing properties are provided
+    if (project.hasProperty("signing.keyId")) {
+        signAllPublications()
+    }
 
     // Configure coordinates (group:artifactId:version)
     coordinates("io.elevenlabs", "elevenlabs-android", project.version.toString())
@@ -115,6 +117,11 @@ mavenPublishing {
             developerConnection.set("scm:git:ssh://git@github.com/elevenlabs/elevenlabs-android.git")
         }
     }
+}
+
+// Skip signing tasks entirely if no signing configuration is supplied
+tasks.withType<org.gradle.plugins.signing.Sign>().configureEach {
+    onlyIf { project.hasProperty("signing.keyId") }
 }
 
 publishing {
