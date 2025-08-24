@@ -43,6 +43,7 @@ namespace = "io.elevenlabs"
     buildFeatures {
         buildConfig = true
     }
+
 }
 
 dependencies {
@@ -118,12 +119,14 @@ mavenPublishing {
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
+        register<MavenPublication>("release") {
             groupId = "com.github.franklintra"
             artifactId = "elevenlabs-sdk"
             version = "1.0"
 
-            from(components["release"])
+            afterEvaluate {
+                from(components["release"])
+            }
         }
     }
 }
