@@ -65,7 +65,7 @@ class ClientToolRegistry {
         name: String,
         parameters: Map<String, Any>,
         timeoutMs: Long = DEFAULT_TIMEOUT_MS
-    ): ClientToolResult {
+    ): ClientToolResult? {
         val tool = tools[name]
             ?: return ClientToolResult.failure("Tool '$name' not found")
 
@@ -91,7 +91,7 @@ class ClientToolRegistry {
     fun executeToolAsync(
         name: String,
         parameters: Map<String, Any>,
-        callback: ((ClientToolResult) -> Unit)? = null
+        callback: ((ClientToolResult?) -> Unit)? = null
     ) {
         scope.launch {
             val result = executeTool(name, parameters)
@@ -201,12 +201,12 @@ class ClientToolRegistryBuilder {
      * @param function Function to execute
      * @return This builder for chaining
      */
-    fun addTool(name: String, function: suspend (Map<String, Any>) -> String): ClientToolRegistryBuilder {
+    fun addTool(name: String, function: suspend (Map<String, Any>) -> String?): ClientToolRegistryBuilder {
         registry.registerTool(name, object : ClientTool {
-            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
                 return try {
                     val result = function(parameters)
-                    ClientToolResult.success(result)
+                    result?.let { ClientToolResult.success(it) }
                 } catch (e: Exception) {
                     ClientToolResult.failure("Function execution failed: ${e.message}")
                 }
@@ -232,7 +232,7 @@ object CommonClientTools {
      * Tool for getting the current time
      */
     val getCurrentTime = object : ClientTool {
-        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             val format = parameters["format"] as? String ?: "yyyy-MM-dd HH:mm:ss"
             return try {
                 val currentTime = java.text.SimpleDateFormat(format, Locale.US).format(java.util.Date())
@@ -247,7 +247,7 @@ object CommonClientTools {
      * Tool for getting device information
      */
     val getDeviceInfo = object : ClientTool {
-        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             return try {
                 val deviceInfo = """
                     Device: ${android.os.Build.DEVICE}
@@ -267,7 +267,7 @@ object CommonClientTools {
      * Tool for logging messages
      */
     val logMessage = object : ClientTool {
-        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             val message = parameters["message"] as? String
                 ?: return ClientToolResult.failure("Missing 'message' parameter")
             val level = parameters["level"] as? String ?: "INFO"

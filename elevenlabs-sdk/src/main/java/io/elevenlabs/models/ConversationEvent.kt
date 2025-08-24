@@ -73,7 +73,7 @@ sealed class ConversationEvent {
         val toolName: String,
         val parameters: Map<String, Any>,
         val toolCallId: String,
-        val expectsResponse: Boolean = true,
+        val expectsResponse: Boolean = false,
     ) : ConversationEvent()
 
     /**
