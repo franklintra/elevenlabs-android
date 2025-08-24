@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     id("com.vanniktech.maven.publish") version "0.34.0"
+    `maven-publish`
 }
 
 group = "io.elevenlabs"
@@ -77,8 +78,10 @@ mavenPublishing {
     // Enable publishing to Maven Central
     publishToMavenCentral(automaticRelease = true)
 
-    // Enable GPG signing (required for Maven Central)
-    signAllPublications()
+    // Only enable GPG signing when signing properties are provided
+    if (project.hasProperty("signing.keyId")) {
+        signAllPublications()
+    }
 
     // Configure coordinates (group:artifactId:version)
     coordinates("io.elevenlabs", "elevenlabs-android", project.version.toString())
@@ -111,6 +114,25 @@ mavenPublishing {
             url.set("https://github.com/elevenlabs/elevenlabs-android")
             connection.set("scm:git:git://github.com/elevenlabs/elevenlabs-android.git")
             developerConnection.set("scm:git:ssh://git@github.com/elevenlabs/elevenlabs-android.git")
+        }
+    }
+}
+
+// Skip signing tasks entirely if no signing configuration is supplied
+tasks.withType<org.gradle.plugins.signing.Sign>().configureEach {
+    onlyIf { project.hasProperty("signing.keyId") }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.franklintra"
+            artifactId = "elevenlabs-sdk"
+            version = "1.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
         }
     }
 }
