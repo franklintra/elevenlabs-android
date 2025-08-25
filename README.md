@@ -40,7 +40,7 @@ dependencyResolutionManagement {
 ```kotlin
 dependencies {
     // ElevenLabs Conversational AI SDK (Android)
-    implementation("io.elevenlabs:elevenlabs-android:<latest>)
+    implementation("io.elevenlabs:elevenlabs-android:<latest>")
 
     // Kotlin coroutines, AndroidX, etc., as needed by your app
 }
