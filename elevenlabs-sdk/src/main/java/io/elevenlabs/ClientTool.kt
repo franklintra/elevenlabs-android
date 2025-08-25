@@ -11,9 +11,9 @@ interface ClientTool {
      * Execute the tool with the provided parameters
      *
      * @param parameters Map of parameter names to values provided by the agent
-     * @return Result of the tool execution
+     * @return Result of the tool execution, or null if no response should be sent
      */
-    suspend fun execute(parameters: Map<String, Any>): ClientToolResult
+    suspend fun execute(parameters: Map<String, Any>): ClientToolResult?
 }
 
 /**

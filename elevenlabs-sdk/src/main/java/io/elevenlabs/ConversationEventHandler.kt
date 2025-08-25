@@ -134,8 +134,8 @@ class ConversationEventHandler(
                 ClientToolResult.failure("Tool execution failed: ${e.message}")
             }
 
-            // Send result back to agent if response is expected
-            if (event.expectsResponse) {
+            // Send result back to agent if response is expected and result is not null
+            if (event.expectsResponse && result != null) {
                 val toolResultEvent = OutgoingEvent.ClientToolResult(
                     toolCallId = event.toolCallId,
                     result = mapOf<String, Any>(
@@ -148,7 +148,7 @@ class ConversationEventHandler(
 
                 messageCallback(toolResultEvent)
             }
-            Log.d("ConvEventHandler", "Tool executed: ${event.toolName} -> ${if (result.success) "SUCCESS" else "FAILED"}")
+            Log.d("ConvEventHandler", "Tool executed: ${event.toolName} -> ${if (result == null) "NO_RESPONSE" else if (result.success) "SUCCESS" else "FAILED"}")
         }
     }
 

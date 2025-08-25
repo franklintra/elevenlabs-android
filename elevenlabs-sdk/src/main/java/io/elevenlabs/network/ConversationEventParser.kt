@@ -130,7 +130,7 @@ object ConversationEventParser {
             toolName = obj.get("tool_name")?.asString ?: "",
             parameters = parameters,
             toolCallId = obj.get("tool_call_id")?.asString ?: "",
-            expectsResponse = obj.get("expects_response")?.asBoolean ?: true,
+            expectsResponse = obj.get("expects_response")?.asBoolean == true,
         )
     }
 
